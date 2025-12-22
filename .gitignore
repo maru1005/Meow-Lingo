@@ -1,0 +1,18 @@
+# ===== Environment =====
+.env
+
+# ===== Node =====
+node_modules/
+.next/
+npm-debug.log*
+
+# ===== Python =====
+__pycache__/
+*.pyc
+.venv/
+
+# ===== Docker =====
+*.log
+
+# ===== OS =====
+.DS_Store
