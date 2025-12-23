@@ -20,6 +20,9 @@ services:
       - "${BACKEND_PORT}:8000"
     depends_on:
       - db
+    volumes:
+      - ./backend:/app   # ← ここを追加
+    working_dir: /app    # ← これもあった方が安全
 
   frontend:
     build: ./frontend
@@ -28,6 +31,10 @@ services:
       - .env
     ports:
       - "3000:3000"
+    volumes:
+     - ./frontend:/app        # ホストのコードをコンテナにマウント
+     - /app/node_modules      # node_modules はコンテナ側に残す
+    working_dir: /app
     depends_on:
       - backend
 
