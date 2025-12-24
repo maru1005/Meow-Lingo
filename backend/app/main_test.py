@@ -1,7 +1,7 @@
 # backend/app/main_test.py
 # test用のFastAPIアプリケーションを定義し、chat.pyのエンドポイントを組み込む
 from fastapi import FastAPI
-from app.api import chat  # あなたが作ったchat.pyを読み込む
+from backend.app.api.v1.endpoints import chat  # あなたが作ったchat.pyを読み込む
 import uvicorn
 
 app = FastAPI()
