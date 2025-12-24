@@ -1,25 +1,30 @@
-# backend/app/api/chat.py
-# LLM APIエンドポイントを定義
+# backend/app/api/v1/endpoints/chat.py
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from app.services.llm_service import get_ai_response
+from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary
+from app.services.llm_service import get_ai_response # LLMサービスからAIの回答を取得する関数をインポート
 
 router = APIRouter()
 
-# フロントエンドから送られてくるデータの形を定義
-class ChatRequest(BaseModel):
-    message: str
-    # 今後、辞書データなどを追加したい場合はここにフィールドを増やす
+@router.post("", response_model=ChatResponse)
+async def chat(request: ChatRequest):
 
-@router.post("/chat")
-async def chat_endpoint(request: ChatRequest):
-    """e
-    ユーザーからのメッセージを受け取り、AIコーチの回答を返します。
-    """
     try:
-        # llm_service.py で作った関数を呼び出す
-        answer = await get_ai_response(request.message)
-        return {"answer": answer}
+        # 1. servicesロジックでAIの回答を取得
+        ai_answer = await get_ai_response(request.message)
+        
+        # 2. バックエンド担当が決めた「ChatResponse」の形に合わせて返す
+        return ChatResponse(
+            reply=ai_answer, # バック担当の変数名に合わせて reply に入れる
+            conversation_id=request.conversation_id or "session-001",
+        )
     except Exception as e:
-        # 万が一エラーが起きた場合に、フロントに500エラーを返す
+        # エラーが起きた場合は適切に報告
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/reset")
+def reset_chat():
+    return {"conversation_id": "new-dummy-conversation-id"}
+
+@router.get("/conversation", response_model=list[ConversationSummary])
+def list_conversation():
+    return []
