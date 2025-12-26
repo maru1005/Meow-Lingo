@@ -3,9 +3,9 @@ from fastapi import APIRouter, HTTPException
 from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary
 from app.services.llm_service import get_ai_response # LLMサービスからAIの回答を取得する関数をインポート
 
-router = APIRouter()
+router = APIRouter(prefix="/chat")
 
-@router.post("", response_model=ChatResponse)
+@router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
 
     try:
