@@ -1,4 +1,5 @@
 # backend/app/services/llm_service.py
+
 import os
 import asyncio
 from openai import AsyncOpenAI  # これだけをインポートする
@@ -6,7 +7,7 @@ from openai import AsyncOpenAI  # これだけをインポートする
 # クライアントの初期化
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# puropt 読み込み
+# prompt 読み込み
 def load_prompt(filename):
     current_dir = os.path.dirname(__file__)
     path = os.path.join(current_dir, "..", "prompts", filename)
@@ -14,12 +15,18 @@ def load_prompt(filename):
         return f.read()
 
 # AI応答 重要　
-# 複数のプロンプトファイルを組み合わせてシステムプロンプトを作成
-async def get_ai_response(user_input: str):
+# 
+async def get_ai_response(user_input: str, dictionary_data: dict = None):
     base_prompt = load_prompt("system_prompt.txt")
+
+    rag_context = ""
+    if dictionary_data:
+        rag_context = f"\n\n【最優先参照データー】\n回答には以下の辞書データを必ず参照してください:\n{dictionary_data.get('definition', '')}\n{dictioinary_data}\n"
     
+    # prompt 合体
     full_system_prompt = f"""
 {base_prompt}
+{rag_context}
 
 【質問タイプ別詳細ルール】
 - vocabulary: {load_prompt("vocabulary.txt")}
@@ -37,7 +44,7 @@ async def get_ai_response(user_input: str):
                 {"role": "system", "content": full_system_prompt},
                 {"role": "user", "content": user_input}
             ],
-            temperature=0.7
+            temperature=0.3 # 温度パラメータの設定 RAG嘘つき対策　低め設定
         )
         return response.choices[0].message.content
     except Exception as e:
