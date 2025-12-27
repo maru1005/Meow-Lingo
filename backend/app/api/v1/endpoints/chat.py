@@ -12,7 +12,7 @@ async def chat(request: ChatRequest):
         # 1. servicesロジックでAIの回答を取得
         ai_answer = await get_ai_response(
             user_input=request.message,
-            dictioinary_data=request.dictionary_data
+            dictionary_data=request.dictionary_data
         )
         
         # 2. バックエンド担当が決めた「ChatResponse」の形に合わせて返す
