@@ -32,7 +32,7 @@ def create_message(
 
 
 def list_messages_by_conversation(
-    dd: Session,
+    db: Session,
     conversation_id: int,
 ) -> list[Message]:
     """
