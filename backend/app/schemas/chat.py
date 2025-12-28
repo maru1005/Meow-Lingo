@@ -1,9 +1,12 @@
+# backend/app/schemas/chat.py
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any # Any 柔軟な型指定のためにインポート
 
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    
+    dictionary_data: Optional[dict[str, Any]] = None 
 
 class ChatResponse(BaseModel):
     reply: str

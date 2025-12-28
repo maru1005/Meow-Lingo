@@ -1,25 +1,28 @@
 # backend/app/services/llm_service.py
-# LLMサービス：OpenAIの非同期クライアントを使用してAI応答を取得
 import os
 import asyncio
-from openai import AsyncOpenAI  # これだけをインポートする
+import json
+from openai import AsyncOpenAI
 
-# クライアントの初期化
+# OpenAIクライアントの初期化
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# puropt 読み込み
 def load_prompt(filename):
+    """プロンプトファイルを読み込む補助関数"""
     current_dir = os.path.dirname(__file__)
     path = os.path.join(current_dir, "..", "prompts", filename)
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
-# AI応答 重要　
-# 複数のプロンプトファイルを組み合わせてシステムプロンプトを作成
 async def get_ai_response(user_input: str, dictionary_data: dict = None):
-    base_prompt = load_prompt("system_prompt.txt")
-    
-    full_system_prompt = f"""
+    """
+    AI応答を生成する。
+    辞書データがある場合は、それを最優先知識としてプロンプトに組み込む。
+    """
+    # 1. すべてのプロンプトファイルを読み込んでシステムプロンプトを構築
+    try:
+        base_prompt = load_prompt("system_prompt.txt")
+        full_system_prompt = f"""
 {base_prompt}
 
 【質問タイプ別詳細ルール】
@@ -29,39 +32,49 @@ async def get_ai_response(user_input: str, dictionary_data: dict = None):
 - learning_advice: {load_prompt("learning_advice.txt")}
 - fallback: {load_prompt("fallback.txt")}
 """
+    except Exception as e:
+        print(f"Prompt Load Error: {e}")
+        full_system_prompt = "あなたは優秀な英語学習コーチです。"
+
+    # 2. メッセージリストの初期化
     messages = [
         {"role": "system", "content": full_system_prompt}
     ]
 
+    # 3. 辞書データがある場合、最優先データとして追加
     if dictionary_data:
-        # AIが最も信頼すべき情報として、ユーザーの質問の直前に差し込む
+        # デバッグ用ログ（Dockerターミナルで見れます）
+        print(f"--- DEBUG: dictionary_data provided for '{user_input}' ---")
+        
+        dict_str = json.dumps(dictionary_data, ensure_ascii=False, indent=2)
         messages.append({
-            "role": "system", 
-            "content": f"以下の信頼できる辞書データに基づいて回答してください:\n{dictionary_data}"
+            "role": "system", # システム命令として「このデータを使え」と指示
+            "content": f"### 【最優先参照データ】\n以下の辞書データは最新かつ正確な情報です。あなたの知識よりもこの内容を優先して回答してください:\n{dict_str}"
         })
 
+    # 4. ユーザーの質問を追加
     messages.append({"role": "user", "content": user_input})
 
     try:
-        # client userの質問に対してAI応答を取得
+        # 5. OpenAI API呼び出し
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": full_system_prompt},
-                {"role": "user", "content": user_input}
-            ],
-            temperature=0.7
+            messages=messages,
+            temperature=0.7 # 少し人間味のある回答にするため0.7に設定
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"エラーが発生しました: {str(e)}"
+        print(f"OpenAI API Error: {e}")
+        return f"申し訳ありません。AI応答中にエラーが発生しました: {str(e)}"
 
-# テスト用コード
+# テスト用コード（python backend/app/services/llm_service.py で実行可能）
 if __name__ == "__main__":
     async def test():
-        print("AIに質問中... (最新版ライブラリ使用)")
-        test_input = "appleのニュアンスを教えて"
-        result = await get_ai_response(test_input)
+        print("AIにテスト質問中...")
+        test_input = "apple"
+        # テスト用に偽の辞書データを入れる
+        test_dict = {"word": "apple", "meanings": [{"partOfSpeech": "noun", "definition": "A round fruit with red or green skin."}]}
+        result = await get_ai_response(test_input, test_dict)
         print(f"\n質問: {test_input}")
         print("-" * 30)
         print(result)
