@@ -1,4 +1,6 @@
 # backend/app/services/llm_service.py
+# LLMサービス：OpenAI APIを使用してAI応答を生成 
+# 辞書データを最優先知識として組み込む機能付き
 import os
 import asyncio
 import json

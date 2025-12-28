@@ -1,4 +1,5 @@
 # backend/app/api/v1/endpoints/chat.py
+# チャットエンドポイント　
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary
@@ -13,7 +14,7 @@ chat_service = ChatService()
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     try:
-        # 【採用！】チームのChatServiceを呼び出す（この中で辞書取得もLLM呼び出しも行われます）
+        # ChatServiceを呼び出す（この中で辞書取得もLLM呼び出しも行われる）
         result = await chat_service.chat(
             db=db,
             firebase_uid="test-user-123", # 将来的に認証から取得
