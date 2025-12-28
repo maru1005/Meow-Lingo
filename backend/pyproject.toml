@@ -1,7 +1,15 @@
+# Ruff 全体の基本設定
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+fix = true
 
+# Lint 設定
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = ["E501"]
+
+# Formatter 設定
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
