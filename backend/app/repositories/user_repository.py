@@ -1,23 +1,25 @@
+# backend/app/repositories/user_repository.py
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.models import User
 
 
-def get_by_firebase_uid(db: Session, get_by_firebase_uid: str) -> User | None:
+def get_by_firebase_uid(db: Session, firebase_uid: str) -> User | None:
     """
     firebase_uid を使ってユーザーを取得する。
 
     - 見つからない場合は None を返す
     """
-    return(
+    return (
         db.query(User)
         .filter(User.firebase_uid == firebase_uid)
         .first()
     )
 
+
 def create_user(
-    db: Section,
+    db: Session,
     firebase_uid: str,
     email: str | None = None,
 ) -> User:
@@ -27,10 +29,10 @@ def create_user(
     - firebase_uid は必須
     - email は表示用（存在すれば保存）
     """
-     user = User(
+    user = User(
         firebase_uid=firebase_uid,
         email=email,
-    ) 
+    )
 
     db.add(user)
 

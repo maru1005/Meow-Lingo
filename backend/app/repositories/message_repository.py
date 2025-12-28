@@ -1,3 +1,4 @@
+# backend/app/repositories/message_repository.py
 from sqlalchemy.orm import Session
 
 from app.models import Message
@@ -9,7 +10,7 @@ def create_message(
     content: str,
     role: str,
 ) -> Message:
-     """
+    """
     Message を新規作成する。
 
     - conversation_id: 紐づく会話ID
@@ -44,13 +45,13 @@ def list_messages_by_conversation(
         db.query(Message)
         .filter(Message.conversation_id == conversation_id)
         .order_by(Message.created_at.asc())
-        .all
+        .all()
     )
 
 
 def delete_messages_by_conversation(
     db: Session,
-    conversation_id: int
+    conversation_id: int,
 ) -> int:
     """
     指定された Conversation に紐づく Message をすべて削除する。

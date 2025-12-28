@@ -1,14 +1,14 @@
+# backend/app/repositories/dictionary_cache_repository.py
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
 
 from app.models import DictionaryCache
 
 
 def get_cache(
     db: Session,
-    word:str,
-    language:str,
+    word: str,
+    language: str,
 ) -> DictionaryCache | None:
     """
     辞書キャッシュを取得する。
@@ -32,7 +32,7 @@ def create_cache(
     language: str,
     response: str,
 ) -> DictionaryCache:
-   """
+    """
     辞書キャッシュを新規作成する。
 
     - response は JSON を文字列化したもの
@@ -76,11 +76,10 @@ def get_or_create_cache(
 
     if response is None:
         return None
-    
+
     return create_cache(
         db=db,
         word=word,
         language=language,
         response=response,
     )
-

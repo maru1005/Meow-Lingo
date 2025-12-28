@@ -1,8 +1,10 @@
+# backend/app/repositories/conversation_repository.py
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime
 
 from app.models import Conversation
+
 
 def get_active_conversation(
     db: Session,
@@ -31,6 +33,7 @@ def get_active_conversation(
         .first()
     )
 
+
 def create_conversation(
     db: Session,
     user_id: int,
@@ -55,11 +58,12 @@ def create_conversation(
 
     return conversation
 
+
 def end_conversation(
     db: Session,
     conversation: Conversation,
 ) -> Conversation:
-     """
+    """
     指定された会話を「終了状態」にする。
 
     - ended_at に現在時刻をセット
@@ -76,6 +80,7 @@ def end_conversation(
     db.refresh(conversation)
 
     return conversation
+
 
 def end_active_conversation(
     db: Session,
@@ -94,6 +99,7 @@ def end_active_conversation(
 
     return end_conversation(db, conversation)
 
+
 def get_or_create_active_conversation(
     db: Session,
     user_id: int,
@@ -103,11 +109,6 @@ def get_or_create_active_conversation(
     存在しなければ新規作成する。
 
     🔥 /api/chat のメイン入口
-
-    これにより Service 層では：
-
-    - 「会話があるか？」を考えなくていい
-    - 常に Conversation が存在する前提で処理できる
     """
     conversation = get_active_conversation(db, user_id)
 
@@ -115,6 +116,7 @@ def get_or_create_active_conversation(
         return conversation
 
     return create_conversation(db, user_id)
+
 
 def list_user_conversations(
     db: Session,

@@ -15,3 +15,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # モデルのベースクラス
 Base = declarative_base()
+
+# DBセッションの依存関係注入用
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
