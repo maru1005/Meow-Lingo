@@ -1,4 +1,5 @@
 # backend/app/services/llm_service.py
+# LLMサービス：OpenAIの非同期クライアントを使用してAI応答を取得
 import os
 import asyncio
 from openai import AsyncOpenAI  # これだけをインポートする
@@ -15,7 +16,7 @@ def load_prompt(filename):
 
 # AI応答 重要　
 # 複数のプロンプトファイルを組み合わせてシステムプロンプトを作成
-async def get_ai_response(user_input: str):
+async def get_ai_response(user_input: str, dictionary_data: dict = None):
     base_prompt = load_prompt("system_prompt.txt")
     
     full_system_prompt = f"""
@@ -28,6 +29,18 @@ async def get_ai_response(user_input: str):
 - learning_advice: {load_prompt("learning_advice.txt")}
 - fallback: {load_prompt("fallback.txt")}
 """
+    messages = [
+        {"role": "system", "content": full_system_prompt}
+    ]
+
+    if dictionary_data:
+        # AIが最も信頼すべき情報として、ユーザーの質問の直前に差し込む
+        messages.append({
+            "role": "system", 
+            "content": f"以下の信頼できる辞書データに基づいて回答してください:\n{dictionary_data}"
+        })
+
+    messages.append({"role": "user", "content": user_input})
 
     try:
         # client userの質問に対してAI応答を取得
