@@ -2,8 +2,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
+from app.core.database import engine, Base
+from app.models import users, conversations, messages, dictionary_cache 
 
 app = FastAPI(title="English Learning AI API")
+
+# 起動時にテーブルを自動作成
+@app.on_event("startup")
+def startup_event():
+    print("Creating tables...")
+    # テーブルを自動作成
+    # 既にテーブルがある場合は何もしないので、毎回実行しても安全です
+    Base.metadata.create_all(bind=engine)
+    print("Tables created (if they didn't exist)!")
 
 app.add_middleware(
     CORSMiddleware,

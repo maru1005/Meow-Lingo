@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Index
+# backend/app/models/dictionary_cache.py
+from sqlalchemy import Column, Integer, String, DateTime, Text, Index, JSON
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -16,7 +17,7 @@ class DictionaryCache(Base):
     language = Column(String(10), nullable=False)
 
     # 辞書APIのレスポンス（JSONを文字列で保存）
-    response = Column(Text, nullable=False)
+    response = Column(JSON, nullable=False)
 
     # キャッシュ作成日時
     created_at = Column(
