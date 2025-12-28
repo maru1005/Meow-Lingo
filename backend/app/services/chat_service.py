@@ -1,5 +1,5 @@
+# backend/app/services/llm_service.py
 from sqlalchemy.orm import Session
-
 from app.repositories.user_repository import (
     get_or_create_by_firebase_uid,
 )
@@ -20,7 +20,7 @@ from app.services.llm_service import generate_ai_reply
 from app.services.dictionary_service import fetch_dictionary_definition
 
 
-class ChatService
+class ChatService: # コロン忘れ
     """
     チャット機能の業務ロジックをまとめた Service。
 
@@ -88,14 +88,14 @@ class ChatService
 
         if cache:
             dictionary_context = cache.response
-            else:
+        else:
                 # 辞書APIを呼ぶ
                 dictionary_response =fetch_dictionary_definition(
                     word=user_message,
                     language=language,
                 )
 
-                if dictionary_response:
+        if dictionary_response:
                     create_cache(
                         db=db,
                         word=user_message,
@@ -107,7 +107,7 @@ class ChatService
         # ------------------------------------
         # 5. 会話履歴を取得（LLM用）
         # ------------------------------------
-        message = list_messages_by_conversation(
+        messages_history = list_messages_by_conversation( # 履歴のためhistory追加　変数定義が違っていたためmessagesに揃える
             db=db,
             conversation_id=conversation.id,
         )
