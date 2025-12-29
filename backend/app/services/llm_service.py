@@ -16,7 +16,12 @@ def load_prompt(filename):
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
-async def get_ai_response(user_input: str, dictionary_data: dict = None):
+async def get_ai_response(
+        user_input: str, 
+        dictionary_data: dict = None,
+        messages_history: list | None = None,
+        searchkeyword: str | None = None,
+        ) -> str:
     """
     AI応答を生成する。
     辞書データがある場合は、それを最優先知識としてプロンプトに組み込む。
@@ -76,7 +81,12 @@ if __name__ == "__main__":
         test_input = "apple"
         # テスト用に偽の辞書データを入れる
         test_dict = {"word": "apple", "meanings": [{"partOfSpeech": "noun", "definition": "A round fruit with red or green skin."}]}
-        result = await get_ai_response(test_input, test_dict)
+        result = await get_ai_response(
+            user_input=test_input, 
+            dictionary_data=test_dict,
+            messages_history=None,
+            searchkeyword=None
+            )
         print(f"\n質問: {test_input}")
         print("-" * 30)
         print(result)
