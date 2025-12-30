@@ -1,3 +1,4 @@
+// frontend/src/app/chat/page.tsx
 "use client";
 
 import ChatMessageList from "@/components/chat/ChatMessageList";

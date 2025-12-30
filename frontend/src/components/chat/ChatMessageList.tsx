@@ -1,3 +1,4 @@
+// frontend/src/components/chat/ChatMessageList.tsx
 "use client";
 
 import { Message } from "@/hooks/useChat";

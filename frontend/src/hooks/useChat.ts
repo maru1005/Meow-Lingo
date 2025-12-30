@@ -1,11 +1,8 @@
+// frontend/src/hooks/useChat.ts
 "use client";
 
 import { useState } from "react";
 
-/**
- * チャット1件分の型
- * ※ API担当がこの形で返す想定
- */
 export type Message = {
     id: string;
     role: "user" | "assistant";
@@ -21,10 +18,6 @@ export function useChat() {
         },
     ]);
 
-    /**
-     * 送信（仮）
-     * → 後で API 呼び出しに差し替える
-     */
     const sendMessage = (text: string) => {
         if (!text.trim()) return;
 
@@ -34,7 +27,7 @@ export function useChat() {
             {
                 id: crypto.randomUUID(),
                 role: "assistant",
-                content: "（ここにAIの返答が入ります）",
+                content: `（mock）「${text}」について説明します。`,
             },
         ]);
     };
