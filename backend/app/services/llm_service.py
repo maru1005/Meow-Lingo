@@ -48,26 +48,37 @@ async def get_ai_response(
         {"role": "system", "content": full_system_prompt}
     ]
 
-    # 3. 辞書データがある場合、最優先データとして追加
+    # 3. 過去会話履歴をセット
+    # AIが文脈を理解できるように履歴を追加
+    if messages_history:
+        for msg in messages_history:
+            # SQLAlchemyのモデルオブジェクトを想定（roleとcontent属性を持つ）
+            messages.append({
+                "role": msg.role, 
+                "content": msg.content
+            })
+
+    # 4. 辞書データがある場合、情報を追加
     if dictionary_data:
-        # デバッグ用ログ（Dockerターミナルで見れます）
-        print(f"--- DEBUG: dictionary_data provided for '{user_input}' ---")
-        
         dict_str = json.dumps(dictionary_data, ensure_ascii=False, indent=2)
+        # 履歴の直後、ユーザーの質問の直前に「最新の参考知識」として配置
         messages.append({
-            "role": "system", # システム命令として「このデータを使え」と指示
+            "role": "system", 
             "content": f"### 【最優先参照データ】\n以下の辞書データは最新かつ正確な情報です。あなたの知識よりもこの内容を優先して回答してください:\n{dict_str}"
         })
 
-    # 4. ユーザーの質問を追加
+    # 5. 今回のユーザーの質問を追加
     messages.append({"role": "user", "content": user_input})
 
+    # --- デバッグ: AIに送る全メッセージを確認（開発中に便利） ---
+    print(f"--- DEBUG: Total messages sent to AI: {len(messages)} ---")
+
     try:
-        # 5. OpenAI API呼び出し
+        # 6. OpenAI API呼び出し
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            temperature=0.7 # 少し人間味のある回答にするため0.7に設定
+            temperature=0.7 #温度パラメータで応答の多様性を調整
         )
         return response.choices[0].message.content
     except Exception as e:
