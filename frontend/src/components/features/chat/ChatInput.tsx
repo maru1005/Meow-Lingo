@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { SendHorizontal, Loader2 } from "lucide-react";
-import { useChatStore } from "./store/useChatStore";
+import { useChatStore } from "../../../store/useChatStore";
 
 export default function ChatInput() {
   const [text, setText] = useState("");
