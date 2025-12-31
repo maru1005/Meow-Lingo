@@ -44,7 +44,7 @@ Authorization: Bearer <Firebase ID Token>
 | --- | --- | --- | --- |
 | POST | `/api/chat` | 要 | 質問を送信し、AIの回答を取得 |
 | POST | `/api/chat/reset` | 要 | 会話リセット |
-| GET | `/api/conversations` | 要 | 会話履歴取得 |
+| GET | `/api/chat/conversations` | 要 | 会話履歴取得 |
 | GET | `/api/auth/me` | 要 | ログインユーザー情報取得 |
 | GET | `/api/health` | 不要 | ヘルスチェック |
 
