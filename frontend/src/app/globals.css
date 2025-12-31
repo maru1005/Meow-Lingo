@@ -6,7 +6,7 @@
     width: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #3f3f46; 
+    background-color: #ccccdd; 
     border-radius: 10px;
   }
 }
