@@ -2,9 +2,11 @@
 # チャットエンドポイント　
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary
+from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary, MessageSummary
 from app.core.database import get_db
 from app.services.chat_service import ChatService
+from app.dependencies.auth import get_current_user
+
 
 router = APIRouter(prefix="/chat")
 
@@ -34,9 +36,38 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/reset")
-def reset_chat():
-    return {"conversation_id": "new-dummy-conversation-id"}
+def reset_chat(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    conversation = chat_service.reset_conversation(
+        db=db,
+        firebase_uid=current_user.firebase_uid,
+    )
+    return {"conversation_id": str(conversation.conversation_uuid)}
 
-@router.get("/conversation", response_model=list[ConversationSummary])
-def list_conversation():
-    return []
+@router.get("/conversations", response_model=list[ConversationSummary])
+def list_conversation(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    conversations =  chat_service.list_conversations(
+        db=db,
+        firebase_uid=current_user.firebase_uid,
+    )
+
+    # ★ ここがconversations を Schema に「詰め替え」
+    return [
+        ConversationSummary(
+            conversation_id=str(conversation.conversation_uuid),
+            created_at=conversation.created_at,
+            messages=[
+                MessageSummary(
+                    role=message.role,
+                    content=message.content,
+                )
+                for message in conversation.messages
+            ],
+        )
+        for conversation in conversations
+    ]
