@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 # チームが用意したリポジトリ（DB操作用）
 from app.repositories.user_repository import get_or_create_by_firebase_uid
-from app.repositories.conversation_repository import get_or_create_active_conversation
+from app.repositories.conversation_repository import get_or_create_active_conversation, create_conversation, list_user_conversations
 from app.repositories.message_repository import create_message, list_messages_by_conversation
 from app.repositories.dictionary_cache_repository import get_cache, create_cache
 
@@ -91,3 +91,57 @@ class ChatService:
             "conversation_id": str(conversation.conversation_uuid),
             "reply": ai_reply,
         }
+    
+    # ==================================================
+    # ★ 追加①：会話リセット
+    # POST /api/chat/reset
+    # ==================================================
+    def reset_conversation(
+            self,
+            db: Session,
+            *,
+            firebase_uid: str,
+    ):
+        """
+        会話をリセットし、新しい Conversation を作成する
+        ※ 過去の会話は削除しない
+        """
+        # User を取得 or 作成
+        user = get_or_create_by_firebase_uid(
+            db=db,
+            firebase_uid=firebase_uid,
+        )
+
+        # 新しい Conversation を作成
+        conversation = create_conversation(
+            db=db,
+            user_id=user.id,
+        )
+
+        return conversation
+    
+    # ==================================================
+    # ★ 追加②：会話一覧取得
+    # GET /api/conversations
+    # ==================================================
+    def list_conversations(
+            self,
+            db: Session,
+            *,
+            firebase_uid: str,
+    ):
+        """
+        ログインユーザーに紐づく会話一覧を返す
+        """
+        # User を取得 or 作成
+        user = get_or_create_by_firebase_uid(
+            db=db,
+            firebase_uid=firebase_uid
+        )
+
+        conversations = list_user_conversation(
+            db=db,
+            user_id=user.id,
+        )
+
+        return conversations
