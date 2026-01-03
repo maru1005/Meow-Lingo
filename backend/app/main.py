@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+#  Firebase Admin SDK 初期化（起動時に1回だけ実行される）
+from app.core import firebase_admin
+
 from app.api.v1.api import api_router
 from app.core.database import engine, Base
 from app.models import users, conversations, messages, dictionary_cache 
