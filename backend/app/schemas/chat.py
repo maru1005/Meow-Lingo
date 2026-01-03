@@ -22,5 +22,12 @@ class MessageSummary(BaseModel):
 
 class ConversationSummary(BaseModel):
     conversation_id: str
-    created_at: datetime
+    titel: str
+    updated_at: datetime
+    messages: List[MessageSummary]
+
+
+class ConversationDetail(BaseModel):
+    conversation_id: str
+    title: str
     messages: List[MessageSummary]

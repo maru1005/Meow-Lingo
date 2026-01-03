@@ -1,12 +1,13 @@
 # backend/app/api/v1/endpoints/chat.py
-# チャットエンドポイント　
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
+from typing import List
+
 from app.schemas.chat import ChatRequest, ChatResponse, ConversationSummary, MessageSummary
 from app.core.database import get_db
 from app.services.chat_service import ChatService
+from app.services.title_service import generate_ai_title
 from app.dependencies.auth import get_current_user
-
 
 router = APIRouter(prefix="/chat")
 
@@ -14,18 +15,29 @@ router = APIRouter(prefix="/chat")
 chat_service = ChatService()
 
 @router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat(
+    request: ChatRequest, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     try:
-        # ChatServiceを呼び出す（この中で辞書取得もLLM呼び出しも行われる）
+        # ChatServiceを呼び出す
         result = await chat_service.chat(
             db=db,
-            firebase_uid="test-user-123", # 将来的に認証から取得
+            firebase_uid=current_user.firebase_uid,
             user_message=request.message,
-            email=None,
-            language="en"
+            conversation_id=request.conversation_id  # スペル修正済み
         )
+
+        # 新規会話（IDがなかった時）だけタイトル生成を予約
+        if not request.conversation_id:
+            background_tasks.add_task(
+                generate_ai_title,
+                result["conversation_id"],
+                request.message
+            )
         
-        # サービスから返ってきた結果をフロントに返す
         return ChatResponse(
             reply=result["reply"],
             conversation_id=result["conversation_id"],
@@ -46,28 +58,52 @@ def reset_chat(
     )
     return {"conversation_id": str(conversation.conversation_uuid)}
 
-@router.get("/conversations", response_model=list[ConversationSummary])
+@router.get("/conversations", response_model=List[ConversationSummary])
 def list_conversation(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    conversations =  chat_service.list_conversations(
+    # 履歴一覧を取得
+    conversations = chat_service.list_conversations(
         db=db,
         firebase_uid=current_user.firebase_uid,
     )
 
-    # ★ ここがconversations を Schema に「詰め替え」
+    # スキーマへの詰め替え（updated_at 対応）
     return [
         ConversationSummary(
-            conversation_id=str(conversation.conversation_uuid),
-            created_at=conversation.created_at,
+            conversation_id=str(conv.conversation_uuid),
+            updated_at=conv.updated_at,  # 学習順に並べるためのこだわり
             messages=[
-                MessageSummary(
-                    role=message.role,
-                    content=message.content,
-                )
-                for message in conversation.messages
-            ],
+                MessageSummary(role=m.role, content=m.content)
+                for m in conv.messages
+            ]
         )
-        for conversation in conversations
+        for conv in conversations
     ]
+
+@router.get("/conversations/{conversation_id}", response_model=ConversationSummary)
+def get_conversation_detail(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    # 指定された会話の詳細を取得
+    conversation = chat_service.get_conversation_detail(
+        db=db,
+        conversation_id=conversation_id,
+        firebase_uid=current_user.firebase_uid
+    )
+
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # 1件分の詰め替え
+    return ConversationSummary(
+        conversation_id=str(conversation.conversation_uuid),
+        updated_at=conversation.updated_at,
+        messages=[
+            MessageSummary(role=m.role, content=m.content)
+            for m in conversation.messages
+        ]
+    )

@@ -12,13 +12,14 @@ export default function AuthProvider({
 }) {
     const {user, idToken, loading } = useAuth();
 
-    useEffect(() => {
-    // 💡 ログインが完了し、トークンが取得できている場合のみ履歴を取得
-    if (!loading && user && idToken) {
-      console.log("ログイン検知！履歴を取得するにゃ");
-      fetchHistory(idToken);
+    
+  
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                Loading...
+            </div>
+        );
     }
-  }, [user, idToken, loading, fetchHistory]);
-
     return <>{children}</>;
 }

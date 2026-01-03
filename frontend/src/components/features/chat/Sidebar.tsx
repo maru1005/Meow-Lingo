@@ -7,7 +7,7 @@ import { useAuthStore, AuthState } from "@/store/useAuthStore";
 
 // src/components/features/chat/Sidebar.tsx
 export const Sidebar = () => {
-    // 💡 型をしっかり指定して any を防ぐ
+
     const history = useChatStore((state: ChatState) => state.history);
     const isSidebarOpen = useChatStore((state: ChatState) => state.isSidebarOpen);
     const toggleSidebar = useChatStore((state: ChatState) => state.toggleSidebar);
