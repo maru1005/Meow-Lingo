@@ -1,29 +1,43 @@
 # backend/app/dependencies/auth.py
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from firebase_admin import auth as firebase_auth
 
 from app.core.database import get_db
-from app.repositories.user_repository import get_or_create_by_firebase_uid
+from app.repositories.user_repository import get_or_create_user
+
+
+security = HTTPBearer()
 
 
 def get_current_user(
-    authorization: str = Header(...),
-    db: Session = Depends(get_db),
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        db: Session = Depends(get_db),
 ):
     """
-    Authorization ヘッダーからユーザーを特定する。
-    ※ 今は Firebase 検証を省略（後で差し替え可能）
+    Firebase ID Token を検証し、User を取得（なければ作成）
     """
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid Authorization header")
+    try:
+            # Bearer トークン取得
+            token = credentials.credentials
 
-    # 仮実装：Bearer の後ろを firebase_uid として扱う
-    firebase_uid = authorization.replace("Bearer ", "")
+            # Firebase で ID Token を検証
+            decoded_token = firebase_auth.verify_id_token(token)
 
-    user = get_or_create_by_firebase_uid(
-        db=db,
-        firebase_uid=firebase_uid,
-        email=None,
-    )
+            firebase_uid: str = decoded_token["uid"]
+            email: str | None = decoded_token.get("email")
+
+    except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Firebase ID Token",
+            )
+
+    user = get_or_create_user(
+            db=db,
+            firebase_uid=firebase_uid,
+            email=email,
+            )
 
     return user

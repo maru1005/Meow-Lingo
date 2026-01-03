@@ -2,12 +2,13 @@
 from fastapi import APIRouter, Depends
 from app.schemas.user import UserResponse
 from app.dependencies.auth import get_current_user
+from app.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.get("/me", response_model=UserResponse)
-def me(current_user=Depends(get_current_user)):
+def me(current_user: User = Depends(get_current_user)):
     """
     ログイン状態の確認およびユーザー情報の取得
 
@@ -15,8 +16,4 @@ def me(current_user=Depends(get_current_user)):
     - ユーザーがなければ作成
     - ユーザー情報を返却
     """
-    return {
-        "firebase_uid": current_user.firebase_uid,
-        "email": current_user.email,
-        "created_at": current_user.created_at,
-    }
+    return current_user
