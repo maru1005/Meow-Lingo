@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 
 # 内部リポジトリ
-from app.repositories.user_repository import get_or_create_by_firebase_uid
+from app.repositories.user_repository import get_or_create_user
 from app.repositories.conversation_repository import get_or_create_active_conversation, create_conversation, list_user_conversations
 from app.repositories.message_repository import create_message, list_messages_by_conversation
 from app.repositories.dictionary_cache_repository import get_cache, create_cache
@@ -26,7 +26,7 @@ class ChatService:
         language: str = "en",
     ) -> dict:
         # 1. User を取得 or 作成
-        user = get_or_create_by_firebase_uid(db=db, firebase_uid=firebase_uid, email=email)
+        user = get_or_create_user(db=db, firebase_uid=firebase_uid, email=email)
 
         # 2. Conversation（会話セッション）を取得 or 作成
         conversation = get_or_create_active_conversation(db=db, user_id=user.id)
@@ -103,7 +103,7 @@ class ChatService:
         language: str = "en",
     ) -> dict:
         # 1. User を取得 or 作成
-        user = get_or_create_by_firebase_uid(db=db, firebase_uid=firebase_uid, email=email)
+        user = get_or_create_user(db=db, firebase_uid=firebase_uid, email=email)
 
         # 2. Conversation（会話セッション）を取得 or 作成
         conversation = get_or_create_active_conversation(db=db, user_id=user.id)
@@ -174,7 +174,7 @@ class ChatService:
         *,
         firebase_uid: str,
     ):
-        user = get_or_create_by_firebase_uid(db=db, firebase_uid=firebase_uid)
+        user = get_or_create_user(db=db, firebase_uid=firebase_uid)
         conversation = create_conversation(db=db, user_id=user.id)
         return conversation
 
@@ -185,7 +185,7 @@ class ChatService:
         *,
         firebase_uid: str,
     ):
-        user = get_or_create_by_firebase_uid(db=db, firebase_uid=firebase_uid)
+        user = get_or_create_user(db=db, firebase_uid=firebase_uid)
         # コンフリクト元のタイポ「list_user_conversation」を修正済み
         conversations = list_user_conversations(db=db, user_id=user.id)
         return conversations
