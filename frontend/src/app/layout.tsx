@@ -1,6 +1,7 @@
 // frontend/src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import AuthProvider from "./AuthProvider";
 
 // 【重要】ここをインポート！
 import Header from "@/components/layout/Header";
@@ -17,12 +18,14 @@ export default function RootLayout({
     return (
         <html lang="ja">
             <body className="bg-emerald-50 text-neutral-800 flex flex-col min-h-screen">
-                <Header />
-                {/* flex-1 を入れることで、メインが余ったスペースを全部埋めます */}
-                <main className="flex-1 flex flex-col w-full max-w-screen-md mx-auto overflow-hidden">
-                    {children}
-                </main>
-                <Footer />
+                <AuthProvider>
+                    <Header />
+                     {/* flex-1 を入れることで、メインが余ったスペースを全部埋めます */}
+                    <main className="flex-1 flex flex-col w-full max-w-screen-md mx-auto overflow-hidden">
+                        {children}
+                    </main>
+                    <Footer />
+                </AuthProvider>
             </body>
         </html>
     );
