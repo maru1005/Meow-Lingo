@@ -73,6 +73,7 @@ def list_conversation(
     return [
         ConversationSummary(
             conversation_id=str(conv.conversation_uuid),
+            title=conv.title if conv.title else conv.updated_at.strftime("%Y-%m-%d %H:%M"),
             updated_at=conv.updated_at,  # 学習順に並べるためのこだわり
             messages=[
                 MessageSummary(role=m.role, content=m.content)
@@ -101,6 +102,7 @@ def get_conversation_detail(
     # 1件分の詰め替え
     return ConversationSummary(
         conversation_id=str(conversation.conversation_uuid),
+        title=conversation.title if conversation.title else conversation.updated_at.strftime("%Y-%m-%d %H:%M"),
         updated_at=conversation.updated_at,
         messages=[
             MessageSummary(role=m.role, content=m.content)

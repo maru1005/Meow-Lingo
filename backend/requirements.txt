@@ -6,3 +6,4 @@ openai
 alembic
 ruff
 httpx
+firebase-admin

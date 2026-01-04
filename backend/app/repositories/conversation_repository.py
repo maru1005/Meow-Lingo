@@ -135,3 +135,39 @@ def list_user_conversations(
         .order_by(Conversation.created_at.desc())
         .all()
     )
+def get_conversation_by_uuid(
+    db: Session,
+    conversation_uuid: str,
+    user_id: int
+) -> Conversation | None:
+    """
+    UUIDを指定して特定の会話を取得する。
+    セキュリティのため、必ず user_id もチェック条件に含める
+    """
+    return (
+        db.query(Conversation)
+        .filter(
+            and_(
+                Conversation.conversation_uuid == conversation_uuid,
+                Conversation.user_id == user_id,
+            )
+        )
+        .first()
+    )
+
+
+def update_conversation_title(
+    db: Session,
+    conversation_uuid: str,
+    title: str
+) -> Conversation | None:
+    """
+    会話のタイトルを更新する。
+    """
+    conversation = db.query(Conversation).filter(Conversation.conversation_uuid == conversation_uuid).first()
+    if conversation:
+        conversation.title = title 
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+    return conversation

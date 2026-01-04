@@ -20,6 +20,7 @@ def get_by_firebase_uid(db: Session, firebase_uid: str) -> User | None:
 
 def create_user(
     db: Session,
+    *,
     firebase_uid: str,
     email: str | None = None,
 ) -> User:
@@ -38,17 +39,17 @@ def create_user(
 
     try:
         db.commit()
+        db.refresh(user)
+        return user
     except IntegrityError:
         # 同時作成などで UNIQUE 制約に引っかかった場合
         db.rollback()
         return get_by_firebase_uid(db, firebase_uid)
 
-    db.refresh(user)
-    return user
 
-
-def get_or_create_by_firebase_uid(
+def get_or_create_user(
     db: Session,
+    *,
     firebase_uid: str,
     email: str | None = None,
 ) -> User:

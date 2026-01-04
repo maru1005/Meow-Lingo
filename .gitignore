@@ -1,6 +1,10 @@
 # ===== Environment =====
 .env
 
+# ===== Firebase =====
+firebase-service-account.json
+credentials/firebase-service-account.json
+
 # ===== Node =====
 node_modules/
 .next/

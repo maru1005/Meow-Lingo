@@ -31,13 +31,13 @@ export const chatApi = {
 
     // 追加：履歴一覧の取得
     getConversations: (idToken?: string | null) =>
-        apiFetch<ConversationSummary[]>("/api/v1/chat/history", { 
+        apiFetch<ConversationSummary[]>("/api/v1/chat/conversations", { 
             method: "GET" 
         }, idToken),
 
     // 追加：特定の会話内容の取得
     getConversationDetail: (conversationId: string, idToken?: string | null) =>
-        apiFetch<ConversationDetail>(`/api/v1/chat/history/${conversationId}`, { 
+        apiFetch<ConversationDetail>(`/api/v1/chat/conversations/${conversationId}`, { 
             method: "GET" 
         }, idToken),
 };

@@ -1,22 +1,43 @@
-// src/components/features/chat/Sidebar.tsx
 "use client";
 
+import { useEffect } from "react";
 import { useChatStore, ChatState } from "@/store/useChatStore";
 import { useAuthStore, AuthState } from "@/store/useAuthStore";
 
-
-// src/components/features/chat/Sidebar.tsx
 export const Sidebar = () => {
-
+    // ストアから必要な状態と関数を取得
     const history = useChatStore((state: ChatState) => state.history);
     const isSidebarOpen = useChatStore((state: ChatState) => state.isSidebarOpen);
     const toggleSidebar = useChatStore((state: ChatState) => state.toggleSidebar);
     const selectConversation = useChatStore((state: ChatState) => state.selectConversation);
+    const fetchHistory = useChatStore((state: ChatState) => state.fetchHistory);
+    
     const idToken = useAuthStore((state: AuthState) => state.idToken);
+
+    useEffect(() => {
+        const loadData = async () => {
+            if (idToken) {
+                console.log("🛠️ [Sidebar] 履歴取得を開始するにゃ。Tokenあり");
+                try {
+                    await fetchHistory(idToken);
+                    console.log("✅ [Sidebar] 履歴取得に成功したにゃ！");
+                } catch (error) {
+                    console.error("❌ [Sidebar] 履歴取得でエラーが発生したにゃ:", error);
+                }
+            } else {
+                console.log("⚠️ [Sidebar] idTokenがまだないから取得を待機中だにゃ");
+            }
+        };
+
+        // サイドバーが開いた時、またはトークンが確定した時にリロード
+        if (isSidebarOpen) {
+            loadData();
+        }
+    }, [isSidebarOpen, idToken, fetchHistory]);
 
     return (
         <>
-            {/* 背景の影（オーバーレイ）：ここがあるからメイン画面との境界がハッキリするニャ */}
+            {/* 背景の影（オーバーレイ） */}
             {isSidebarOpen && (
                 <div 
                     className="fixed inset-0 bg-emerald-900/40 backdrop-blur-sm z-40 transition-opacity" 
@@ -24,7 +45,7 @@ export const Sidebar = () => {
                 />
             )}
 
-            {/* サイドバー本体：エメラルド調の配色 */}
+            {/* サイドバー本体 */}
             <aside className={`
                 fixed inset-y-0 left-0 z-50 w-72 bg-emerald-50 shadow-2xl border-r border-emerald-200 transform transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -56,12 +77,25 @@ export const Sidebar = () => {
                                 <button
                                     key={chat.conversation_id}
                                     onClick={() => {
+                                        console.log(`選択された会話ID: ${chat.conversation_id}`);
                                         selectConversation(chat.conversation_id, idToken);
                                         toggleSidebar(); // 選択したら閉じる
                                     }}
-                                    className="w-full text-left p-3 text-sm text-emerald-800 hover:bg-emerald-200/50 rounded-xl transition-all border border-transparent hover:border-emerald-200 truncate"
+                                    className="w-full text-left p-3 text-sm text-emerald-800 hover:bg-emerald-200/50 rounded-xl transition-all border border-transparent hover:border-emerald-200 group"
                                 >
-                                    {chat.title || "新しいおしゃべり"}
+                                    <div className="font-medium truncate mb-1">
+                                        {chat.title || "🐱 新しい会話"}
+                                    </div>
+                                    {chat.updated_at && (
+                                        <div className="text-[10px] text-emerald-400 group-hover:text-emerald-600 transition-colors">
+                                            {new Date(chat.updated_at).toLocaleString('ja-JP', {
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </div>
+                                    )}
                                 </button>
                             ))
                         )}
