@@ -27,7 +27,7 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     messages: [],
     history: [],
     isLoading: false,
-    isSidebarOpen: true,
+    isSidebarOpen: false,
     conversationId: null,
 
     // UI操作
@@ -74,6 +74,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
         set({ isLoading: true });
         try {
             const data = await chatApi.getConversationDetail(id, idToken);
+            
+            // 💡 付箋を貼る：リロードしてもこのIDを覚えているようにするニャ
+            localStorage.setItem("last_conv_id", id);
+            
             set({ 
                 messages: data.messages, 
                 conversationId: id,
@@ -89,6 +93,10 @@ export const useChatStore = create<ChatState>()((set, get) => ({
     resetChat: async (idToken?: string | null) => {
         try {
             const data = await chatApi.reset(idToken);
+            
+            // 💡 付箋を剥がす：新しい会話にする時は「さっきの続き」を忘れるニャ
+            localStorage.removeItem("last_conv_id");
+            
             set({ 
                 messages: [], 
                 conversationId: data.conversation_id,

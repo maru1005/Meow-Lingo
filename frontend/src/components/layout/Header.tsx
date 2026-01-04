@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatStore } from "@/store/useChatStore";
 
@@ -9,6 +10,18 @@ export default function Header() {
   // チームの作った auth と store から必要なものだけ抜く
   const { user, logout, loading } = useAuth();
   const toggleSidebar = useChatStore((state) => state.toggleSidebar);
+  const router = useRouter();
+
+const handleLogout = async () => {
+    try {
+      await logout();
+      console.log("👋 ログアウトしたにゃー。トップへ！");
+      router.push("/"); 
+    } catch (error) {
+      console.error("ログアウト失敗:", error);
+    }
+  };
+
 
   // 1. ローディング中（認証状態確認中）の表示
   // これにより useEffect + setMounted(true) の代わりになります
@@ -54,7 +67,7 @@ export default function Header() {
               </span>
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs text-emerald-800 hover:bg-emerald-100"
               >
                 ログアウト
