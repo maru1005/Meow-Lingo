@@ -11,21 +11,36 @@ export async function apiFetch<T>(
     const headers = new Headers(init.headers);
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-    // 🔑 Firebase ID Token を取得
+    // 🔑 トークン取得をより確実にする
     const user = auth.currentUser;
     if (user) {
-        const idToken = await user.getIdToken();
-        headers.set("Authorization", `Bearer ${idToken}`);
+        try {
+            const token = await user.getIdToken(true); // 強制リフレッシュ
+            headers.set("Authorization", `Bearer ${token}`);
+            console.log("🔑 Token attached to request");
+        } catch (e) {
+            console.error("トークン取得失敗だニャ:", e);
+        }
     }
 
-    console.log(`Requesting to: ${API_BASE_URL}${path}`);
+    // パスの先頭に / が重複しないように調整
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const fullUrl = `${API_BASE_URL}${cleanPath}`;
 
-    const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+    console.log(`🚀 Requesting to: ${fullUrl}`);
 
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`API Error ${res.status}: ${text || res.statusText}`);
+    try {
+        const res = await fetch(fullUrl, { ...init, headers });
+
+        if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            console.error(`❌ APIエラー詳細: ${res.status}`, text);
+            throw new Error(`API Error ${res.status}: ${text}`);
+        }
+        
+        return res.status === 204 ? (undefined as T) : (await res.json());
+    } catch (err) {
+        console.error("🚨 fetchそのものが失敗したニャ（ネットワークエラー等）:", err);
+        throw err;
     }
-    
-    return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
