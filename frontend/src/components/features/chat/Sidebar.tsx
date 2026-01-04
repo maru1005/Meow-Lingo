@@ -21,9 +21,9 @@ export const Sidebar = () => {
         if (!idToken || isInitialized.current) return;
 
         const loadData = async () => {
-            console.log("🚀 [Sidebar] 復元プロセス開始ニャ！");
+            console.log("🚀 [Sidebar] 復元プロセス開始にゃ！");
             
-            // Zustand の最新の関数を直接奪い取るニャ
+            // Zustand の最新の関数を直接奪い取る
             const chatState = useChatStore.getState();
             
             try {
@@ -35,24 +35,24 @@ export const Sidebar = () => {
                 console.log("📝 [Sidebar] 保存されていたID:", savedId);
 
                 if (savedId) {
-                    console.log("🔄 [Sidebar] 続きをロードするニャ:", savedId);
+                    console.log("🔄 [Sidebar] 続きをロードするにゃ:", savedId);
                     await chatState.selectConversation(savedId, idToken);
                 } else {
-                    console.log("🆕 [Sidebar] 新規チャットを開始するニャ");
+                    console.log("🆕 [Sidebar] 新規チャットを開始するにゃ");
                     await chatState.resetChat(idToken);
                 }
                 
                 // 完了フラグを立てる
                 isInitialized.current = true;
             } catch (err) {
-                console.error("❌ 復元に失敗したニャ:", err);
+                console.error("❌ 復元に失敗したにゃ:", err);
             }
         };
 
         loadData();
 
         // 💡 依存配列から fetchHistory などの関数をあえて外す！
-        // idToken が確定した瞬間だけ動けばいいから、これで安定するニャ。
+        // idToken が確定した瞬間だけ動けばいいから、これで安定する。
     }, [idToken]);
     return (
         <>
