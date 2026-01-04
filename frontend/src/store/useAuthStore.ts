@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 const token = await firebaseUser.getIdToken();
-                console.log("🔑 [AuthStore] トークンを取得・更新したニャ！");
+                console.log("🔑 [AuthStore] トークンを取得・更新したにゃ！");
                 set({
                     user: firebaseUser,
                     idToken: token,
