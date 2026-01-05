@@ -82,3 +82,9 @@ def mock_chat_reset(monkeypatch):
         "reset_conversation",
         fake_reset_conversation
     )
+
+@pytest.fixture
+def db_session():
+    # 実際には MagicMock 等を使って DB 操作を擬似化します
+    from unittest.mock import MagicMock
+    return MagicMock()
