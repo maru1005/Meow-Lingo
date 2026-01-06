@@ -48,8 +48,9 @@ async def chat(
         if not request.conversation_id:
             background_tasks.add_task(
                 generate_ai_title,
-                result["conversation_id"],
-                request.message
+                conversation_id=result["conversation_id"],
+                user_message=request.message,
+                user_id=current_user.id
             )
             logger.debug(
                 "title generation scheduled uid=%s conversation_id=%s",
@@ -69,12 +70,15 @@ async def chat(
         )
         
     except Exception:
+        raise
+    except Exception as e:
         logger.exception(
             "chat failed uid=%s",
             uid,
         )
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
+# reset は履歴削除ではなく「新しい会話開始」なので POST
 @router.post("/reset")
 def reset_chat(
     db: Session = Depends(get_db),
@@ -103,6 +107,8 @@ def reset_chat(
         return {"conversation_id": str(conversation.conversation_uuid)}
     
     except Exception:
+        raise
+    except Exception as e:
         logger.exception(
             "chat reset failed uid=%s",
             uid,
@@ -149,6 +155,8 @@ def list_conversation(
         ]
     
     except Exception:
+        raise
+    except Exception as e:
         logger.exception(
             "fetch conversations failed uid=%s",
             uid,
