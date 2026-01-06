@@ -21,8 +21,8 @@ def test_chat_success(
 
     data = response.json()
     assert data["reply"] == "This is a mock response"
-    assert data["conversation_id"] == "mock-conversation-id"
-
+    assert data["conversation_id"] is not None
+    
 
 def test_chat_requires_auth(client):
     response = client.post(

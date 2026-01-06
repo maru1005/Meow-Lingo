@@ -50,19 +50,19 @@ def mock_auth_user():
 
 @pytest.fixture
 def mock_chat_service(monkeypatch):
-    """
-    AIの返答をシミュレートするモック
-    """
-    # 実際に AI サービスを呼び出しているクラスや関数をターゲットにします
-    # ここでは例として app.services.chat.ChatService.get_response を差し替えると仮定
-    
-    def fake_get_response(*args, **kwargs):
-        return "This is a mock response from AI."
+    async def fake_chat(*args, **kwargs):
+        return {
+            "conversation_id": "test-conversation-id",
+            "reply": "This is a mock response"
+        }
 
-    # プロジェクトの実際の構造に合わせて、モック対象のパスを修正してください
-    # monkeypatch.setattr("app.services.chat.ChatService.get_response", fake_get_response)
-    
-    return fake_get_response
+    from app.api.v1.endpoints import chat
+
+    monkeypatch.setattr(
+        chat.chat_service,
+        "chat",
+        fake_chat
+    )
 
 
 @pytest.fixture
