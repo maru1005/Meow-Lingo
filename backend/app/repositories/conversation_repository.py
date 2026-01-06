@@ -158,16 +158,27 @@ def get_conversation_by_uuid(
 
 def update_conversation_title(
     db: Session,
+    *,
     conversation_uuid: str,
+    user_id: int,
     title: str
 ) -> Conversation | None:
     """
-    会話のタイトルを更新する。
+    会話のタイトルを更新する（user_id を必ず検証する）
     """
-    conversation = db.query(Conversation).filter(Conversation.conversation_uuid == conversation_uuid).first()
-    if conversation:
-        conversation.title = title 
-        db.add(conversation)
-        db.commit()
-        db.refresh(conversation)
+    conversation = (
+        db.query(Conversation)
+        .filter(Conversation.conversation_uuid == conversation_uuid,
+                Conversation.user_id == user_id,
+        )
+        .first()
+    )
+
+    if not conversation:
+        return None
+    conversation.title = title 
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+
     return conversation
