@@ -3,41 +3,42 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from firebase_admin import auth as firebase_auth
+from firebase_admin.exceptions import FirebaseError
 
 from app.core.database import get_db
 from app.repositories.user_repository import get_or_create_user
 
-
-security = HTTPBearer()
-
+security = HTTPBearer(auto_error=False)
 
 def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
+        credentials: HTTPAuthorizationCredentials | None = Depends(security),
         db: Session = Depends(get_db),
 ):
-    """
-    Firebase ID Token を検証し、User を取得（なければ作成）
-    """
-    try:
-            # Bearer トークン取得
-            token = credentials.credentials
+        # トークン未指定
+        if not credentials:
+                raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Authorization token missing",
+                )
 
-            # Firebase で ID Token を検証
-            decoded_token = firebase_auth.verify_id_token(token)
+        token = credentials.credentials
 
-            firebase_uid: str = decoded_token["uid"]
-            email: str | None = decoded_token.get("email")
+        # Firebase ID Token 検証
+        try:
+                decoded_token = firebase_auth.verify_id_token(token)
+        except FirebaseError:
+                raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid Firebase ID Token",
+                        )
 
-    except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid Firebase ID Token",
-            )
+        firebase_uid: str = decoded_token["uid"]
+        email: str | None = decoded_token.get("email")
 
-    user = get_or_create_user(
-            db=db,
-            firebase_uid=firebase_uid,
-            email=email,
-            )
+        user = get_or_create_user(
+                db=db,
+                firebase_uid=firebase_uid,
+                email=email,
+        )
 
-    return user
+        return user

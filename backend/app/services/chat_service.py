@@ -129,9 +129,9 @@ class ChatService:
         user = get_or_create_user(db=db, firebase_uid=firebase_uid)
         return get_conversation_by_uuid(db, conversation_id, user.id)
 
-    def update_title(self, db: Session, conversation_id: str, title: str):
+    def update_title(self, db: Session, *, conversation_id: str, user_id= int, title: str):
         """AIが生成したタイトルをDBに保存"""
-        return update_conversation_title(db, conversation_id, title)
+        return update_conversation_title(db=db, conversation_uuid=conversation_id, user_id=user_id,title=title)
 
     # === 内部ヘルパー ===
     async def _extract_keyword(self, text: str) -> str | None:

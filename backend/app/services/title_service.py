@@ -5,7 +5,7 @@ from app.services.llm_service import get_ai_response # チームが作ったLLM�
 
 logger = logging.getLogger(__name__)
 
-async def generate_ai_title(conversation_id: str, user_message: str):
+async def generate_ai_title(conversation_id: str, user_message: str, user_id: int):
     """
     LLMを呼び出してタイトルを生成し、PostgreSQLに保存する。
     """
@@ -28,7 +28,7 @@ async def generate_ai_title(conversation_id: str, user_message: str):
         try:
             service = ChatService()
             # さっき作った update_title メソッドでDBを更新するニャ！
-            service.update_title(db, conversation_id, ai_title)
+            service.update_title(db=db, conversation_id=conversation_id, user_id=user_id, title=ai_title)
             print(f"DEBUG: 会話 {conversation_id} のタイトルを「{ai_title}」に更新したニャ！")
         finally:
             db.close()
