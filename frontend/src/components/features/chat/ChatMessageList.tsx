@@ -36,7 +36,8 @@ export default function ChatMessageList() {
             {/* アイコン（User/Bot ともに画像で統一） */}
             <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden">
               <Image
-                src={isUser ? "/images/user-icon-v3.png" : "/images/meow-icon.png"}
+                src={isUser ? "/images/user-icon-v3.png" : "/images/footprints.png"}
+
                 alt={isUser ? "You" : "Meow Lingo"}
                 width={40}
                 height={40}
