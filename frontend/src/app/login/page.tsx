@@ -126,37 +126,26 @@ export default function LoginPage() {
                                     type="submit"
                                     disabled={loading}
                                     aria-label="Login"
-                                    className="
-                    group relative inline-flex h-[56px] w-[280px]
-                    items-center justify-center overflow-hidden rounded-full
-                    disabled:cursor-not-allowed disabled:opacity-60
-                  "
+                                    className="group relative inline-flex h-[56px] w-[280px]
+                                                items-center justify-center overflow-hidden rounded-full
+                                                disabled:cursor-not-allowed disabled:opacity-60"
+
                                 >
                                     <span
-                                        className="
-                      absolute inset-0 rounded-full
-                      bg-rose-400 shadow-md transition-all
-                      group-active:scale-[0.98]
-                    "
+                                        className="absolute inset-0 rounded-full
+                                                   bg-rose-400 shadow-md transition-all
+                                                    group-active:scale-[0.98]"
                                     />
                                     <span
-                                        className="
-                      absolute left-3 right-3 top-2 h-6 rounded-full
-                      bg-white/30 blur-[0.5px]
-                    "
+                                        className="absolute left-3 right-3 top-2 h-6 rounded-full bg-white/30 blur-[0.5px]"
                                     />
                                     <span
-                                        className="
-                      absolute inset-x-0 bottom-0 h-6 rounded-b-full
-                      bg-rose-400/70 blur-[2px]
-                    "
+                                        className="absolute inset-x-0 bottom-0 h-6 rounded-b-full bg-rose-400/70 blur-[2px]"
                                     />
                                     <span
-                                        className="
-                      relative z-10 text-[22px] font-extrabold
-                      tracking-[0.45em] text-white
-                      drop-shadow-[0_2px_0_rgba(0,0,0,0.25)]
-                    "
+                                        className="relative z-10 text-[22px] font-extrabold
+                                                  tracking-[0.45em] text-white
+                                                  drop-shadow-[0_2px_0_rgba(0,0,0,0.25)]"
                                         style={{ paddingLeft: "0.45em" }}
                                     >
                                         {loading ? "ログイン中…" : "ログイン"}

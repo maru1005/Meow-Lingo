@@ -1,11 +1,14 @@
+// src/app/chat/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-import ChatHeader from "@/components/features/chat/ChatHeader";
+// import ChatHeader from "@/components/features/chat/ChatHeader";
 import ChatMessageList from "@/components/features/chat/ChatMessageList";
 import ChatInput from "@/components/features/chat/ChatInput";
 
@@ -43,7 +46,22 @@ export default function ChatPage() {
           shadow-sm border border-emerald-100
         "
       >
-        <ChatHeader />
+        {/* <ChatHeader /> ←消す */}
+
+        {/* ✅ /chat のカード内左上にサブタイトルを表示（肉球つき） */}
+        <div className="shrink-0 px-4 pt-3 pb-2">
+          <div className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
+            <span>英語学習にゃんでも</span>
+            <Image
+              src="/images/footprints.png"
+              alt=""
+              aria-hidden="true"
+              width={12}
+              height={12}
+              className="h-[1em] w-[1em] align-middle"
+            />
+          </div>
+        </div>
 
         {/* ✅ メッセージだけスクロール */}
         <div className="flex-1 min-h-0 overflow-y-auto">
