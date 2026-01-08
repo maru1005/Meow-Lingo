@@ -1,68 +1,78 @@
-"use client"; // ✅ App Routerでは client側のhooks/useEffect/router/firebase を使うため必須
+// src/app/chat/page.tsx
+
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // ✅ Firebase auth を1箇所に集約したものを参照
+import { auth } from "@/lib/firebase";
 
-import ChatHeader from "@/components/features/chat/ChatHeader";
+// import ChatHeader from "@/components/features/chat/ChatHeader";
 import ChatMessageList from "@/components/features/chat/ChatMessageList";
 import ChatInput from "@/components/features/chat/ChatInput";
 
 export default function ChatPage() {
   const router = useRouter();
-
-  // ✅ 認証状態の判定が終わるまで画面を出さないためのフラグ
-  // （未ログイン時に一瞬チャットUIが見える“チラつき”防止）
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // ✅ Firebaseのログイン状態を購読（ログイン/ログアウトでコールバックが呼ばれる）
     const unsubscribe = onAuthStateChanged(
       auth,
-
-      // --- 認証状態が取れたとき（成功時） ---
       (user) => {
-        // ✅ 未ログインなら /login へ飛ばす（/chat 直打ち対策）
         if (!user) {
-          router.replace("/login"); // 戻るボタンで /chat に戻りにくいよう replace を使う
+          router.replace("/login");
           return;
         }
-
-        // ✅ ログイン済みならチャット画面を表示してOK
         setChecking(false);
       },
-
-      // --- 認証状態取得でエラーになったとき（例：env未設定など） ---
       (err) => {
         console.warn("onAuthStateChanged error:", err);
-
-        // ✅ エラー時も安全側に倒して /login へ
         router.replace("/login");
       }
     );
-
-    // ✅ コンポーネントが消える時に購読解除（メモリリーク防止）
     return () => unsubscribe();
   }, [router]);
 
-  // ✅ 判定中は何も描画しない（チラつき防止）
   if (checking) return null;
 
-  // ✅ 認証OK（ログイン済み）の場合だけチャットUIを描画
   return (
-    <div
-      className="
-        flex flex-col flex-1
-        bg-white/80
-        backdrop-blur
-        rounded-2xl
-        shadow-sm
-      "
-    >
-      <ChatHeader />
-      <ChatMessageList />
-      <ChatInput />
+    // ✅ 親（layoutのスクロール枠）いっぱいに伸ばす
+    <div className="mx-auto h-full w-full max-w-[420px] px-4 py-3">
+      <div
+        className="
+          flex h-full min-h-0 flex-col overflow-hidden
+          rounded-2xl bg-white/80 backdrop-blur
+          shadow-sm border border-emerald-100
+        "
+      >
+        {/* <ChatHeader /> ←消す */}
+
+        {/* ✅ /chat のカード内左上にサブタイトルを表示（肉球つき） */}
+        <div className="shrink-0 px-4 pt-3 pb-2">
+          <div className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700">
+            <span>英語学習にゃんでも</span>
+            <Image
+              src="/images/footprints.png"
+              alt=""
+              aria-hidden="true"
+              width={12}
+              height={12}
+              className="h-[1em] w-[1em] align-middle"
+            />
+          </div>
+        </div>
+
+        {/* ✅ メッセージだけスクロール */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ChatMessageList />
+        </div>
+
+        {/* ✅ 入力欄は下に固定 */}
+        <div className="shrink-0 border-t border-emerald-100 bg-white/60">
+          <ChatInput />
+        </div>
+      </div>
     </div>
   );
 }
