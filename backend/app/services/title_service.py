@@ -1,37 +1,40 @@
+# backend/app/services/title_service.py
 import logging
-from app.services.chat_service import ChatService
 from app.core.database import SessionLocal
-from app.services.llm_service import get_ai_response # チームが作ったLLMサービスを使うニャ
+from app.services.llm_service import get_ai_response
+from app.crud import chat as chat_crud
 
 logger = logging.getLogger(__name__)
 
 async def generate_ai_title(conversation_id: str, user_message: str, user_id: int):
     """
-    LLMを呼び出してタイトルを生成し、PostgreSQLに保存する。
+    バックグラウンドで会話のタイトルを生成してDBを更新するニャ！
     """
+    if user_message == "INITIAL_GREETING":
+        return
+
     try:
-        # 1. プロンプトの組み立て
         prompt = f"""
-        以下のユーザーの発言内容を分析し、最適な絵文字1つと、5文字以内のタイトルを1つだけ出力してください。余計な解説は不要です。
-        
-        【ルール】
-        - 挨拶なら 🐱, 旅行なら ✈️, 食べ物なら 🍔, 仕事なら 💼
-        - 内容：{user_message}
+        Analyze the following user input and provide:
+        1. One representative emoji.
+        2. A title within 10 characters in Japanese.
+        Format: "Emoji Title" (e.g., "🐱 挨拶の練習")
+        Content: {user_message}
         """
 
-        # 2. LLM呼び出し（チームが作ったサービスを拝借！）
-        ai_title = await get_ai_response(user_input=prompt)
-        ai_title = ai_title.strip()[:10]  # 長すぎないようにカット
+        ai_title = await get_ai_response(user_input=prompt, mode="system_prompt")
+        ai_title = ai_title.strip().replace('"', '')
 
-        # 3. DB（PostgreSQL）に保存
+        # バックグラウンドタスクなので自分でセッションを管理するニャ
         db = SessionLocal()
         try:
-            service = ChatService()
-            # さっき作った update_title メソッドでDBを更新するニャ！
-            service.update_title(db=db, conversation_id=conversation_id, user_id=user_id, title=ai_title)
-            print(f"DEBUG: 会話 {conversation_id} のタイトルを「{ai_title}」に更新したニャ！")
+            conv = chat_crud.get_conversation(db, conversation_id, user_id)
+            if conv:
+                conv.title = ai_title
+                db.commit()
+                logger.info(f"Title updated: {ai_title}")
         finally:
             db.close()
 
     except Exception as e:
-        logger.error(f"タイトル生成中にエラーが発生したけど、メインのチャットは止めないニャ: {e}")
+        logger.error(f"Failed to generate title: {e}")

@@ -1,37 +1,38 @@
 // frontend/src/app/login/page.tsx
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/useAuthStore"; 
+import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login } = useAuth();
-
+    const { login } = useAuthStore(); 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = async () => {
-        if (loading) return;
+const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); // ✅ フォームのデフォルト送信を防ぐ
+    if (loading) return;
 
-        setError(null);
-        setLoading(true);
+    setError(null);
+    setLoading(true);
 
-        try {
-            await login(email, password);
-            router.replace("/chat");
-        } catch {
-            setError("メールアドレスまたはパスワードが正しくありません");
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+        await login(email, password);
+        // ✅ login関数内でidTokenがセットされるまで待つようになったので安心！
+        router.replace("/selection");
+    } catch (err) {
+        console.error("Login Error:", err);
+        setError("メールアドレスまたはパスワードが正しくありません");
+    } finally {
+        setLoading(false);
+    }
+};
 
     // 入力欄：押しやすさを保ちつつ、縦も詰める
     const pillInput =
@@ -57,9 +58,6 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    <p className="mt-1 text-xs text-emerald-700/90">
-                        カプセルが開いたよ。ミャウと話そう🐾
-                    </p>
                 </div>
 
                 {/* 猫：主役 */}
@@ -80,8 +78,7 @@ export default function LoginPage() {
                         <form
                             className="space-y-3"
                             onSubmit={(e) => {
-                                e.preventDefault();
-                                handleLogin();
+                                handleLogin(e);
                             }}
                         >
                             {/* ID */}

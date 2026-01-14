@@ -21,38 +21,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     loading: true,
     initialized: false,
 
-    // 🔁 Firebase 認証状態を監視し、トークンを自動更新する
     initAuth: () => {
+        // すでに監視中なら何もしない
         if (get().initialized) return;
+        set({ initialized: true });
 
         onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 const token = await firebaseUser.getIdToken();
-                console.log("🔑 [AuthStore] トークンを取得・更新したにゃ！");
                 set({
                     user: firebaseUser,
                     idToken: token,
                     loading: false,
-                    initialized: true,
                 });
             } else {
                 set({
                     user: null,
                     idToken: null,
                     loading: false,
-                    initialized: true,
                 });
             }
         });
     },
 
     login: async (email, password) => {
-        await signInWithEmailAndPassword(auth, email, password);
-        // login成功時も onAuthStateChanged が走るので、ここでは set しなくてOK
+        // 1. まずログイン実行
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // 2. その場で最新のトークンを取得してストアに入れる（監視を待たずに即座に反映！）
+        const token = await userCredential.user.getIdToken();
+        set({ 
+            user: userCredential.user, 
+            idToken: token,
+            loading: false 
+        });
     },
 
     signup: async (email, password) => {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const token = await userCredential.user.getIdToken();
+        set({ user: userCredential.user, idToken: token, loading: false });
     },
 
     logout: async () => {

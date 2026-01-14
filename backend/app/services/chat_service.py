@@ -1,144 +1,110 @@
 # backend/app/services/chat_service.py
+import asyncio
 from sqlalchemy.orm import Session
-
-# 内部リポジトリ
-from app.repositories.user_repository import get_or_create_user
-from app.repositories.conversation_repository import get_or_create_active_conversation, create_conversation, list_user_conversations, get_conversation_by_uuid, update_conversation_title
-from app.repositories.message_repository import create_message, list_messages_by_conversation
-from app.repositories.dictionary_cache_repository import get_cache, create_cache
-
-# 外部サービス
+from app.crud import chat as chat_crud
+from app.crud import user as user_crud
+from app.crud import dictionary as dict_crud
 from app.services.llm_service import get_ai_response
 from app.services.dictionary_service import fetch_dictionary_data
+from app.services.title_service import generate_ai_title
 
 class ChatService:
-    """
-    チャット機能の業務ロジックをまとめたService。
-    辞書データの取得（RAG）、DB保存、AI応答生成を管理します。
-    """
-    async def chat(
-        self, 
-        db: Session,
-        *,
-        firebase_uid: str,
-        user_message: str,
-        conversation_id: str | None = None,
-        email: str | None = None,
-        language: str = "en",
-    ) -> dict:
-        # 1. User を取得 or 作成
-        user = get_or_create_user(db=db, firebase_uid=firebase_uid, email=email)
+    async def chat(self, db: Session, *, firebase_uid: str, user_message: str, 
+                   conversation_id: str | None = None, mode: str = "study") -> dict:
+        
+        # 1. User取得
+        user = user_crud.get_or_create_user(db, firebase_uid=firebase_uid)
 
-        # 2. Conversation（会話セッション）を取得 or 作成
+        if user_message == "INITIAL_GREETING":
+            greetings = {
+                "study": "今日は何するにゃ？フリートークでもなんでも聞いてにゃ〜！",
+                "vocabulary": "今日はどんな新しい単語を覚えよかにゃ？一緒に特訓するにゃ！",
+                "grammar": "現在・過去・未来...難しい文法もMeowにお任せにゃ！何からやるにゃ？",
+                "test": "にゃー！どんなテストにするにゃ？覚悟はいいかにゃ？"
+            }
+            return {
+                "conversation_id": None,
+                "reply": greetings.get(mode, "こんにちにゃ！Meow Englishへようこそだにゃ！"),
+            }
+
+        # 2. 会話の特定
+        conversation = None
         if conversation_id:
-            conversation = get_conversation_by_uuid(db, conversation_id, user.id)
+            conversation = chat_crud.get_conversation(db, conversation_id, user.id)
+
+        # 3. ユーザー発言の保存（遅延作成）
+        if user_message != "INITIAL_GREETING":
             if not conversation:
-                conversation = get_or_create_active_conversation(db=db, user_id=user.id)
-        else:
-            conversation = get_or_create_active_conversation(db=db, user_id=user.id)
+                conversation = chat_crud.create_conversation(db, user.id, mode=mode)
+            chat_crud.create_message(db, conversation.id, user_message, "user")
 
-        # 3. ユーザーの発言をDBに保存
-        create_message(
-            db=db, 
-            conversation_id=conversation.id, 
-            content=user_message, 
-            role="user"
-        )
-
-        # 4. 辞書キャッシュ（RAG）の処理
+        # 4. 辞書RAG処理
         dictionary_context = None
-        # 辞書キャッシュを検索するためのキーワード抽出
-        searchkeyword = await self._extract_keyword(user_message)
-        # 辞書キャッシュをDBから取得
-        if searchkeyword:
-            cache = get_cache(db=db, word=searchkeyword, language=language)
+        if user_message != "INITIAL_GREETING":
+            # 💡 ここで self._extract_keyword を呼ぶので、インデントが大事
+            search_word = await self._extract_keyword(user_message)
+            if search_word:
+                cache = dict_crud.get_or_create_cache(db, search_word, "en")
+                if cache:
+                    dictionary_context = cache.response
+                else:
+                    dict_res = await fetch_dictionary_data(search_word)
+                    if dict_res:
+                        dict_crud.create_cache(db, search_word, "en", dict_res)
+                        dictionary_context = dict_res
 
-            if cache:
-                # キャッシュがある場合、そのデータを使う
-                dictionary_context = cache.response
-            else:
-                # キャッシュにない場合、外部API（Free Dictionary API）から取得
-                dictionary_response = await fetch_dictionary_data(word=searchkeyword)
-            
-                if dictionary_response:
-                # 取得したデータをDBにキャッシュ保存（次回以降の高速化）
-                    create_cache(
-                        db=db,
-                        word=searchkeyword,
-                        language=language,
-                        response=dictionary_response,
-                    )
-                    dictionary_context = dictionary_response
-
-        # 5. 会話履歴を取得（将来的な文脈理解用）
-        messages_history = list_messages_by_conversation(
-            db=db, 
-            conversation_id=conversation.id
-        )
-
-        # 6. AI（LLM）を呼び出す
-        # 取得した辞書データを添えて、AIに回答を依頼
+        # 5. AI応答生成
+        history = conversation.messages if conversation else []
         ai_reply = await get_ai_response(
             user_input=user_message,
+            mode=mode,
             dictionary_data=dictionary_context,
-            messages_history=messages_history,
-            searchkeyword=searchkeyword,
+            messages_history=history
         )
 
-        # 7. AIの回答をDBに保存
-        create_message(
-            db=db, 
-            conversation_id=conversation.id, 
-            content=ai_reply, 
-            role="assistant"
-        )
+        # 6. AI応答の保存
+        if conversation:
+            chat_crud.create_message(db, conversation.id, ai_reply, "assistant")
 
-        # 8. フロントエンドへ返すレスポンスを構成
+            if len(conversation.messages) <= 2:
+                asyncio.create_task(
+                    generate_ai_title(
+                        conversation_id=str(conversation.conversation_uuid),
+                        user_message=user_message,
+                        user_id=user.id
+                )
+            )
+
+        # 7. レスポンス
         return {
-            "conversation_id": str(conversation.conversation_uuid),
+            "conversation_id": str(conversation.conversation_uuid) if conversation else None,
             "reply": ai_reply,
+            "title": conversation.title if conversation else None
         }
-    
 
+    def list_conversations(self, db: Session, firebase_uid: str):
+        user = user_crud.get_or_create_user(db, firebase_uid=firebase_uid)
+        return chat_crud.list_conversations(db, user.id)
 
-    # === 追加機能：会話リセット ===
-    def reset_conversation(
-        self,
-        db: Session,
-        *,
-        firebase_uid: str,
-    ):
-        user = get_or_create_user(db=db, firebase_uid=firebase_uid)
-        conversation = create_conversation(db=db, user_id=user.id)
-        return conversation
-
-    # === 追加機能：会話一覧取得 ===
-    def list_conversations(
-        self,
-        db: Session,
-        *,
-        firebase_uid: str,
-    ):
-        user = get_or_create_user(db=db, firebase_uid=firebase_uid)
-        conversations = list_user_conversations(db=db, user_id=user.id)
-        return conversations
-    
-    # === タイトル生成 ===
     def get_conversation_detail(self, db: Session, conversation_id: str, firebase_uid: str):
-        """特定の会話の詳細（メッセージ履歴付き）を取得"""
-        user = get_or_create_user(db=db, firebase_uid=firebase_uid)
-        return get_conversation_by_uuid(db, conversation_id, user.id)
+        user = user_crud.get_or_create_user(db, firebase_uid=firebase_uid)
+        return chat_crud.get_conversation(db, conversation_id, user.id)
 
-    def update_title(self, db: Session, *, conversation_id: str, user_id= int, title: str):
-        """AIが生成したタイトルをDBに保存"""
-        return update_conversation_title(db=db, conversation_uuid=conversation_id, user_id=user_id,title=title)
+    def delete_conversation(self, db: Session, conversation_id: str, firebase_uid: str) -> bool:
+        user = user_crud.get_or_create_user(db, firebase_uid=firebase_uid)
+        return chat_crud.delete_conversation(db, conversation_id, user.id)
 
-    # === 内部ヘルパー ===
+    def update_title(self, db: Session, conversation_id: str, user_id: int, title: str):
+        conv = chat_crud.get_conversation(db, conversation_id, user_id)
+        if conv:
+            conv.title = title
+            db.commit()
+
+    # 💡 この関数の左側にスペース（4つ分）がちゃんとあるか確認ニャ！
     async def _extract_keyword(self, text: str) -> str | None:
-        prompt = f"以下のテキストから、英語学習辞書で調べるべき英単語を1つだけ抜き出してください。英単語のみを返してください。該当がない場合は 'None' と返してください。\n\nテキスト: {text}"
-        keyword = await get_ai_response(user_input=prompt)
-        clean_keyword = keyword.strip().lower().replace(".", "").replace('"', '').replace("'", "")
-        
-        if not clean_keyword or "none" in clean_keyword:
+        if len(text) < 3 or text == "INITIAL_GREETING": 
             return None
-        return clean_keyword
+        prompt = f"Extract one English word from: '{text}'. Return ONLY the word or 'None'."
+        keyword = await get_ai_response(user_input=prompt, mode="system_prompt")
+        res = keyword.strip().lower().replace(".", "")
+        return None if "none" in res else res

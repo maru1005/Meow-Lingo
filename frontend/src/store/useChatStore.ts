@@ -1,7 +1,8 @@
-// src/components/features/chat/store/useChatStore.ts
+// frontend/src/store/useChatStore.ts
 import { create } from 'zustand';
-import { chatApi } from '@/components/features/chat/api/chatApi';
-import { Message, ChatReplyResponse } from '@/types/chat';
+import { persist } from 'zustand/middleware'; // 
+import { apiFetch } from '@/lib/api';
+import { Message, ChatReplyResponse, MessageRole } from '@/types/chat';
 
 interface ConversationSummary {
     conversation_id: string;
@@ -9,101 +10,156 @@ interface ConversationSummary {
     updated_at: string;
 }
 
-export interface ChatState {
+interface ChatState {
     messages: Message[];
     history: ConversationSummary[];
+    currentMode: 'study' | 'vocabulary' | 'grammar' | 'test';
+    conversationId: string | null;
     isLoading: boolean;
     isSidebarOpen: boolean;
-    conversationId: string | null;
+    
+    setMode: (mode: ChatState['currentMode']) => void;
     toggleSidebar: () => void;
-    setMessages: (messages: Message[]) => void;
-    sendMessage: (content: string, idToken?: string | null) => Promise<void>;
-    fetchHistory: (idToken?: string | null) => Promise<void>;
-    selectConversation: (conversationId: string, idToken?: string | null) => Promise<void>;
-    resetChat: (idToken?: string | null) => Promise<void>;
+    initialGreeting: () => Promise<void>;
+    sendMessage: (content: string) => Promise<void>;
+    fetchHistory: () => Promise<void>;
+    selectConversation: (id: string) => Promise<void>;
+    resetChat: () => Promise<void>;
+    deleteConversation: (id: string) => Promise<void>;
 }
 
-export const useChatStore = create<ChatState>()((set, get) => ({
-    messages: [],
-    history: [],
-    isLoading: false,
-    isSidebarOpen: false,
-    conversationId: null,
+export const useChatStore = create<ChatState>()(
+    persist(
+        (set, get) => ({
+            messages: [],
+            history: [],
+            currentMode: 'study',
+            conversationId: null,
+            isLoading: false,
+            isSidebarOpen: false,
 
-    // UI操作
-    toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-    setMessages: (messages) => set({ messages }),
+            setMode: (mode) => set({ currentMode: mode }),
+            toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 
-    // API連動：送信
-    sendMessage: async (content: string, idToken?: string | null) => {
-        const userMsg: Message = { role: 'user', content };
-        set((state) => ({ 
-            messages: [...state.messages, userMsg],
-            isLoading: true 
-        }));
+            initialGreeting: async () => {
+                set({ isLoading: true, messages: [] });
+                try {
+                    const data = await apiFetch<ChatReplyResponse>("/chat", "POST", {
+                        message: "INITIAL_GREETING",
+                        mode: get().currentMode,
+                        conversation_id: null
+                    });
+                    set({ 
+                        messages: [{ role: 'assistant', content: data.reply }],
+                        conversationId: data.conversation_id,
+                        isLoading: false 
+                    });
+                    await get().fetchHistory();
+                } catch (error) {
+                    console.error('挨拶できなかったにゃ、、、', error);
+                    set({ isLoading: false });
+                }
+            },
 
-        try {
-            const data = await chatApi.sendMessage(content, idToken);
-            const aiMsg: Message = { role: 'assistant', content: data.reply };
-            set((state) => ({ 
-                messages: [...state.messages, aiMsg],
-                conversationId: data.conversation_id,
-                isLoading: false 
-            }));
-            // 送信後、履歴のタイトルが変わる可能性があるので履歴も更新
-            get().fetchHistory(idToken); 
-        } catch (error) {
-            console.error(error);
-            set({ isLoading: false });
+            sendMessage: async (content: string) => {
+                const { messages, currentMode, conversationId } = get();
+                const userMsg: Message = { role: 'user', content };
+                set({ messages: [...messages, { role: 'user', content }], isLoading: true });
+
+                try {
+                    const data = await apiFetch<ChatReplyResponse & {title?: string}>("/chat", "POST", {
+                        message: content,
+                        mode: currentMode,
+                        conversation_id: conversationId
+                    });
+
+                    set((state) => {
+                        const aiMsg: Message = { role: 'assistant', content: data.reply };
+                        const nextMessages = [...state.messages, aiMsg];
+                        const updatedHistory = state.history.map(item => {
+                            if (item.conversation_id === data.conversation_id && data.title) {
+                                return { ...item, title: data.title };
+                            }
+                            return item;
+                        });
+
+                        return {
+                            ...state,
+                            messages: nextMessages,
+                            conversationId: data.conversation_id,
+                            history: updatedHistory,
+                            isLoading: false
+                        };
+                    });
+
+                    if (!conversationId) {
+                        await get().fetchHistory();
+                    }
+
+                } catch (error) {
+                    console.error('送信失敗にゃ、、、', error);
+                    set({ isLoading: false });
+                }
+            }, 
+
+
+            fetchHistory: async () => {
+                try {
+                    const data = await apiFetch<any[]>("/chat/conversations", "GET");
+                    const mappedHistory = data.map(item => ({
+                        ...item,
+                        conversation_id: item.conversation_id || item.conversation_uuid,
+                        title: item.title,
+                        updated_at: item.updated_at
+                    }));
+                    set({ history: mappedHistory });
+                } catch (error) {
+                    console.error("History fetch failed", error);
+                }
+            },
+
+            selectConversation: async (id: string) => {
+                set({ isLoading: true });
+                try {
+                    const data = await apiFetch<any>(`/chat/conversations/${id}`, "GET");
+                    const cleanMessages = (data.messages || []).filter(
+                        (m: any) => m.content !== "INITIAL_GREETING"
+                    );
+                    set({ 
+                        messages: cleanMessages, 
+                        conversationId: id, 
+                        isLoading: false 
+                    });
+                } catch (error) {
+                    console.error('履歴取得失敗にゃ、、、', error)
+                    set({ isLoading: false });
+                }
+            },
+
+            deleteConversation: async (id: string) => {
+                try {
+                    await apiFetch(`/chat/conversations/${id}`, "DELETE");
+                    set((state) => ({
+                        history: state.history.filter(item => item.conversation_id !== id)
+                    }));
+                    if (get().conversationId === id) {
+                        set({ messages: [], conversationId: null });
+                    }
+                } catch (error) {
+                    console.error('削除失敗にゃ、、、', error);
+                }
+            },
+
+            resetChat: async () => {
+                set({ messages: [], conversationId: null });
+            }
+        }),
+        {
+            name: 'chat-storage', // ローカルストレージのキー名
+            partialize: (state) => ({ 
+                conversationId: state.conversationId, 
+                currentMode: state.currentMode 
+            }), 
         }
-    },
-
-    // API連動：履歴リスト取得
-    fetchHistory: async (idToken?: string | null) => {
-        try {
-            // chatApiに履歴取得用メソッドを後で追加する
-            const data = await chatApi.getConversations(idToken);
-            set({ history: data });
-        } catch (error) {
-            console.error("履歴の取得に失敗したニャ:", error);
-        }
-    },
-
-    // API連動：過去の会話を読み込む
-    selectConversation: async (id: string, idToken?: string | null) => {
-        set({ isLoading: true });
-        try {
-            const data = await chatApi.getConversationDetail(id, idToken);
-            
-            // 💡 付箋を貼る：リロードしてもこのIDを覚えているようにするニャ
-            localStorage.setItem("last_conv_id", id);
-            
-            set({ 
-                messages: data.messages, 
-                conversationId: id,
-                isLoading: false 
-            });
-        } catch (error) {
-            console.error("会話の読み込みに失敗したニャ:", error);
-            set({ isLoading: false });
-        }
-    },
-
-    // API連動：リセット
-    resetChat: async (idToken?: string | null) => {
-        try {
-            const data = await chatApi.reset(idToken);
-            
-            // 💡 付箋を剥がす：新しい会話にする時は「さっきの続き」を忘れるニャ
-            localStorage.removeItem("last_conv_id");
-            
-            set({ 
-                messages: [], 
-                conversationId: data.conversation_id,
-                isLoading: false 
-            });
-        } catch (error) {
-            console.error(error);
-        }
-    }
-}));
+    )
+);

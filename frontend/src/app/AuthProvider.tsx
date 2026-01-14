@@ -1,23 +1,20 @@
 // src/app/AuthProvider.tsx
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
-import { useChatStore } from "@/store/useChatStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
-export default function AuthProvider({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const {user, idToken, loading } = useAuth();
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
+    const { initAuth, loading } = useAuthStore();
 
-    
-  
+    useEffect(() => {
+        initAuth(); 
+    }, [initAuth]);
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                Loading...
+            <div className="flex items-center justify-center min-h-screen text-emerald-600 font-bold">
+                Loading Meow Lingo...
             </div>
         );
     }

@@ -1,3 +1,4 @@
+# backend/app/modeles/conversations.py
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -48,6 +49,8 @@ class Conversation(Base):
     )
 
     title = Column(String, nullable=True)
+
+    mode = Column(String(20), server_default="study", nullable=False)
 
     # リレーション
     user = relationship(

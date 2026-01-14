@@ -9,3 +9,4 @@ httpx
 firebase-admin
 pytest
 pytest-asyncio
+pydantic-settings

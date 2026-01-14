@@ -30,7 +30,7 @@ export default function HomePage() {
     // 判定中はOPENの行き先がブレるので一旦描画しない（0.2秒くらい）
     if (checking) return null;
 
-    const openHref = user ? "/chat" : "/login";
+    const openHref = user ? "/selection" : "/login";
 
     return (
         <main className="w-full bg-emerald-50 text-neutral-800">
