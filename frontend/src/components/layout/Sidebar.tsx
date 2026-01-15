@@ -4,8 +4,10 @@
 import { useChatStore } from "@/store/useChatStore";
 import { useEffect } from "react";
 import { Trash2, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function Sidebar() {
+  const router = useRouter();
   const { isSidebarOpen, toggleSidebar, history, fetchHistory, selectConversation, resetChat, deleteConversation } = useChatStore();
   
   useEffect(() => {
@@ -17,7 +19,9 @@ export function Sidebar() {
       {isSidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={toggleSidebar} />}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-emerald-100 transition-transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-5 flex flex-col h-full">
-          <button onClick={() => { resetChat(); toggleSidebar(); }} className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
+          <button onClick={() => { resetChat(); toggleSidebar();
+            router.push("/chat");
+           }} className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
           <Plus size={20} />
           New Learning
           </button>
@@ -28,7 +32,9 @@ export function Sidebar() {
             {history.map((item) => (
               <div key={item.conversation_id} className="group relative">
                 <button 
-                  onClick={() => { selectConversation(item.conversation_id); toggleSidebar(); }} 
+                  onClick={async () => { await selectConversation(item.conversation_id); toggleSidebar();
+                    router.push("/chat");
+                   }} 
                   className="w-full text-left p-3 text-sm hover:bg-emerald-50 rounded-xl border border-transparent hover:border-emerald-100 transition-all pr-12"
                 >
                   <div className="font-bold text-emerald-800 truncate">{item.title}</div>
