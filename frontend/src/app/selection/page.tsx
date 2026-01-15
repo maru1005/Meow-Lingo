@@ -27,12 +27,12 @@ export default function SelectionPage() {
             <div className="h-full flex flex-col items-center">
 
                 {/* 上余白（可変） */}
-                <div className="flex-[1]" />
+                <div className="flex-[0.3]" />
 
                 {/* キャラクター画像 - リーダーのこだわり drop-shadow */}
-                <div className="relative w-full max-w-[360px] aspect-square drop-shadow-lg">
+                <div className="relative w-full max-w-[520px] aspect-square drop-shadow-lg animate-jump-meow">
                     <Image
-                        src="/images/walk-meow.PNG"
+                        src="/images/jump-meow.png"
                         alt="Walking Apple Cat"
                         fill
                         className="object-contain"
@@ -41,7 +41,7 @@ export default function SelectionPage() {
                 </div>
 
                 {/* モード選択エリア */}
-                <div className="w-full max-w-[420px] px-5 mt-6">
+                <div className="w-full max-w-[420px] px-5">
                     <p className="text-center text-sm tracking-wider text-neutral-500 mb-4 font-bold">
                         今日は何するにゃ？
                     </p>
@@ -79,13 +79,13 @@ export default function SelectionPage() {
                 {/* 戻る導線 */}
                 <button
                     onClick={() => router.push("/")}
-                    className="mt-6 text-xs text-emerald-700 underline underline-offset-4 font-bold opacity-70 hover:opacity-100 transition-opacity"
+                    className="mt-4 text-xs text-emerald-700 underline underline-offset-4 font-bold opacity-70 hover:opacity-100 transition-opacity"
                 >
                     ← トップに戻る
                 </button>
 
                 {/* 下余白（可変・やや多め） */}
-                <div className="flex-[1.2]" />
+                <div className="flex-[1]" />
             </div>
         </main>
     );

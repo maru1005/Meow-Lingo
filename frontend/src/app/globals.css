@@ -9,4 +9,35 @@
     background-color: #ccccdd; 
     border-radius: 10px;
   }
+
+  .animate-yurayura {
+    animation: yurayura 3s ease-in-out infinite;
+  }
+  @keyframes yurayura {
+    0%, 100% {
+      transform: translateY(0) rotate(5deg);
+    }
+    33% {
+      transform: translateY(-8px) rotate(2deg); /* 少し浮いて右に傾く */
+    }
+    66% {
+      transform: translateY(-4px) rotate(-2deg); /* 少し下がって左に傾く */
+    }
+  }
+  .animate-jump-meow {
+    animation: jump-meow 2s ease-in-out infinite;
+  }
+
+  @keyframes jump-meow {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-25px) scale(1.05); /* 上に跳ねて少し大きくなる */
+    }
+    /* 着地した時に少しだけ潰れる演出を入れるとリアルだニャ */
+    70% {
+      transform: translateY(0) scale(0.98, 1.02);
+    }
+  }
 }

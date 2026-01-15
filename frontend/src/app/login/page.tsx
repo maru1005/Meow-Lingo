@@ -61,7 +61,7 @@ const handleLogin = async (e: React.FormEvent) => {
                 </div>
 
                 {/* 猫：主役 */}
-                <div className="mx-auto mt-3 relative h-[clamp(280px,78vw,360px)] w-[clamp(280px,78vw,360px)]">
+                <div className="mx-auto  relative h-[clamp(280px,78vw,360px)] w-[clamp(280px,78vw,360px)] animate-yurayura">
                     <Image
                         src="/images/capsule-hello.png"
                         alt="Meow Lingo capsule cat"
@@ -73,7 +73,7 @@ const handleLogin = async (e: React.FormEvent) => {
                 </div>
 
                 {/* フォーム */}
-                <div className="mx-auto mt-[clamp(12px,2.4vh,18px)] w-full max-w-[340px]">
+                <div className="mx-auto mt-[clamp(12px,2.4vh,18px)] w-full max-w-[300px]">
                     <div className="w-full rounded-3xl bg-white/80 p-5 shadow-md backdrop-blur border border-rose-100">
                         <form
                             className="space-y-3"
@@ -123,7 +123,7 @@ const handleLogin = async (e: React.FormEvent) => {
                                     type="submit"
                                     disabled={loading}
                                     aria-label="Login"
-                                    className="group relative inline-flex h-[56px] w-[280px]
+                                    className="group relative inline-flex h-[42px] w-[200px]
                                                 items-center justify-center overflow-hidden rounded-full
                                                 disabled:cursor-not-allowed disabled:opacity-60"
 
