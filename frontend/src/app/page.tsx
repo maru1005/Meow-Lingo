@@ -33,11 +33,10 @@ export default function HomePage() {
     const openHref = user ? "/selection" : "/login";
 
     return (
-        <main className="w-full bg-emerald-50 text-neutral-800">
-            <div className="mx-auto w-full max-w-[420px] px-5 pt-8 pb-10">
-                <p className="text-center text-sm text-neutral-500">1日1分から学ぶ英語</p>
+        <main className="w-full h-full flex flex-col bg-emerald-50 overflow-y-auto sm:overflow-hidden text-neutral-800">
+            <div className="mx-auto w-full max-w-[420px] h-full flex flex-col px-5 py-4">
 
-                <div className="mt-4 flex justify-center">
+                <div className="mt-2 flex justify-center">
                     <Image
                         src="/images/logo-yoko.png"
                         alt="Meow Lingo"
@@ -47,31 +46,29 @@ export default function HomePage() {
                     />
                 </div>
 
-                <div className="relative mx-auto mt-6 w-full max-w-[340px]">
+                <div className="relative mx-auto mt-2 w-full max-w-[340px] animate-yurayura">
                     <Image
                         src="/images/capsule.png"
                         alt="Meow Lingo capsule cat"
                         width={340}
                         height={340}
                         priority
+                        className="drop-shadow-3xl"
                     />
-                    <div className="absolute -right-1 -top-3 w-[170px]">
+                    <div className="absolute -right-2 -top-2 w-[170px]">
                         <Image
                             src="/images/speech.png"
                             alt="Let's start learning!"
                             width={170}
                             height={110}
                             priority
+                            className="drop-shadow-3xl"
                         />
                     </div>
                 </div>
 
-                <p className="mt-10 text-center text-sm tracking-wider text-neutral-500">
-                    カプセルを開けよう
-                </p>
-
                 {/* OPENボタン：ログイン状態で行き先を切り替える */}
-                <div className="mt-4 flex justify-center">
+                <div className="mt-2 flex justify-center">
                     <Link
                         href={openHref}
                         aria-label="Open"
