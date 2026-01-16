@@ -30,7 +30,7 @@ export default function SelectionPage() {
                 <div className="flex-[0.3]" />
 
                 {/* キャラクター画像 - リーダーのこだわり drop-shadow */}
-                <div className="relative w-full max-w-[520px] aspect-square drop-shadow-lg animate-jump-meow">
+                <div className="relative w-full max-w-[420px] aspect-square drop-shadow-lg animate-jump-meow">
                     <Image
                         src="/images/jump-meow.png"
                         alt="Walking Apple Cat"
