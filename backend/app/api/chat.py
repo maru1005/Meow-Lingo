@@ -30,7 +30,7 @@ def list_conversations(db: Session = Depends(get_db), user=Depends(get_current_u
                     conversation_id=str(conv.conversation_uuid),
                     title=conv.title if conv.title else conv.updated_at.strftime("%Y-%m-%d %H:%M"),
                     updated_at=conv.updated_at,
-                    mode=getattr(conv, "mode", "study"),
+                    mode=conv.chat_mode,
                     messages=[
                         MessageSummary(role=m.role, content=m.content)
                         for m in conv.messages
@@ -53,7 +53,7 @@ def get_conversation(conversation_id: str, db: Session = Depends(get_db), user=D
             conversation_id=str(conv.conversation_uuid),
             title=conv.title if conv.title else conv.updated_at.strftime("%Y-%m-%d %H:%M"),
             updated_at=conv.updated_at,
-            mode=getattr(conv, "mode", "study"),
+            mode=conv.chat_mode,
             messages=[
                 MessageSummary(role=m.role, content=m.content)
                 for m in conv.messages

@@ -11,11 +11,11 @@ class LLMService:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    async def get_ai_response(self, *, user_input: str, mode: str = "study", 
+    async def get_ai_response(self, *, user_input: str, chat_mode: str = "study", 
                              dictionary_data: dict = None, messages_history: list = None) -> str:
         
         # 1. モードに合わせたプロンプト取得（なければデフォルト）
-        system_content = prompt_manager.get_prompt(f"{mode}.txt")
+        system_content = prompt_manager.get_prompt(f"{chat_mode}.txt")
         messages = [{"role": "system", "content": system_content}]
 
         # 2. 履歴追加（INITIAL_GREETINGは履歴に入れない方がAIが混乱しないニャ）

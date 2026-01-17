@@ -22,7 +22,7 @@ async def generate_ai_title(conversation_id: str, user_message: str, user_id: in
         Content: {user_message}
         """
 
-        ai_title = await get_ai_response(user_input=prompt, mode="system_prompt")
+        ai_title = await get_ai_response(user_input=prompt, chat_mode="system_prompt")
         ai_title = ai_title.strip().replace('"', '')
 
         # バックグラウンドタスクなので自分でセッションを管理するニャ

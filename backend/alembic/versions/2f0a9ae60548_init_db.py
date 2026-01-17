@@ -1,8 +1,8 @@
-"""initial tables
+"""init_db
 
-Revision ID: 2659a527ad40
+Revision ID: 2f0a9ae60548
 Revises: 
-Create Date: 2025-12-26 20:05:44.274203
+Create Date: 2026-01-17 06:06:01.333908
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '2659a527ad40'
+revision: str = '2f0a9ae60548'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('word', sa.String(length=255), nullable=False),
     sa.Column('language', sa.String(length=10), nullable=False),
-    sa.Column('response', sa.Text(), nullable=False),
+    sa.Column('response', sa.JSON(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -47,6 +47,9 @@ def upgrade() -> None:
     sa.Column('conversation_uuid', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('ended_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('title', sa.String(), nullable=True),
+    sa.Column('chat_mode', sa.String(length=20), server_default='study', nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

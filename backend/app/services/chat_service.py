@@ -57,7 +57,7 @@ class ChatService:
         history = conversation.messages if conversation else []
         ai_reply = await get_ai_response(
             user_input=user_message,
-            mode=mode,
+            chat_mode=mode,
             dictionary_data=dictionary_context,
             messages_history=history
         )
@@ -105,6 +105,6 @@ class ChatService:
         if len(text) < 3 or text == "INITIAL_GREETING": 
             return None
         prompt = f"Extract one English word from: '{text}'. Return ONLY the word or 'None'."
-        keyword = await get_ai_response(user_input=prompt, mode="system_prompt")
+        keyword = await get_ai_response(user_input=prompt, chat_mode="system_prompt")
         res = keyword.strip().lower().replace(".", "")
         return None if "none" in res else res

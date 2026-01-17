@@ -31,7 +31,8 @@ class ConversationSummary(BaseModel):
     conversation_id: str = Field(..., alias="conversation_uuid") 
     title: Optional[str] = None
     updated_at: datetime
-    mode: str = "study"
+    # DBの chat_mode カラムの値を、APIの mode として読み込む設定
+    mode: str = Field("study", validation_alias="chat_mode")
     messages: List[MessageSummary] 
 
     model_config = {

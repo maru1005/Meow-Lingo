@@ -9,7 +9,7 @@ from app.models.messages import Message
 # --- 会話操作 (Conversation) ---
 
 def create_conversation(db: Session, user_id: int, mode: str = "study") -> Conversation:
-    conv = Conversation(user_id=user_id, mode=mode)
+    conv = Conversation(user_id=user_id, chat_mode=mode)
     db.add(conv)
     db.commit()
     db.refresh(conv)

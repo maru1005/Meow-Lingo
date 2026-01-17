@@ -50,7 +50,7 @@ class Conversation(Base):
 
     title = Column(String, nullable=True)
 
-    mode = Column(String(20), server_default="study", nullable=False)
+    chat_mode = Column(String(20), server_default="study", nullable=False)
 
     # リレーション
     user = relationship(
