@@ -35,6 +35,9 @@ async def generate_ai_title(conversation_id: str, user_message: str, user_id: in
                 logger.info(f"Title updated: {ai_title}")
         finally:
             db.close()
+        
+        return ai_title
 
     except Exception as e:
         logger.error(f"Failed to generate title: {e}")
+        return None

@@ -3,13 +3,15 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { FrontendMiddleware } from "@/lib/middleware";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-    const { initAuth, loading } = useAuthStore();
+    const { loading } = useAuthStore();
 
     useEffect(() => {
-        initAuth(); 
-    }, [initAuth]);
+        // ✅ ミドルウェアから認証初期化
+        FrontendMiddleware.initAuth();
+    }, []);
 
     if (loading) {
         return (

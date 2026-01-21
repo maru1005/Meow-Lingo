@@ -54,6 +54,7 @@ export default function HomePage() {
                         height={340}
                         priority
                         className="drop-shadow-3xl"
+                        style={{ width: "auto", height: "auto" }}
                     />
                     <div className="absolute -right-2 -top-2 w-[170px]">
                         <Image
@@ -63,12 +64,13 @@ export default function HomePage() {
                             height={110}
                             priority
                             className="drop-shadow-3xl"
+                            style={{ width: "auto", height: "auto" }}
                         />
                     </div>
                 </div>
 
                 {/* OPENボタン：ログイン状態で行き先を切り替える */}
-                <div className="mt-2 flex justify-center">
+                <div className="mt-2 flex flex-col items-center gap-4">
                     <Link
                         href={openHref}
                         aria-label="Open"
@@ -85,6 +87,16 @@ export default function HomePage() {
                             OPEN
                         </span>
                     </Link>
+
+                    {/* 未ログイン時のみ新規登録へのリンク表示 */}
+                    {!user && (
+                        <Link
+                            href="/signup"
+                            className="px-6 py-2 rounded-full bg-emerald-500 text-white font-semibold text-sm hover:bg-emerald-600 transition-colors shadow-md"
+                        >
+                            新規登録はこちら
+                        </Link>
+                    )}
                 </div>
 
                 {/* デバッグ用（必要なら表示） */}

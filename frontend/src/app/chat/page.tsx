@@ -30,7 +30,15 @@ export default function ChatPage() {
       router.replace("/login");
       return;
     }
-    fetchHistory();
+    // ✅ ログイン状態なら履歴を取得
+    const loadHistory = async () => {
+      try {
+        await fetchHistory();
+      } catch (error) {
+        console.error("履歴取得エラー:", error);
+      }
+    };
+    loadHistory();
   }, [user, router, fetchHistory]);
 
   // 2. 💡 リロード復元 or 新規挨拶の判定ロジック
@@ -60,7 +68,7 @@ export default function ChatPage() {
         
         <div className="shrink-0 px-6 pt-4 pb-2">
           <div className={`inline-flex items-center gap-2 text-[12px] font-bold ${settings.color} tracking-widest transition-colors duration-300`}>
-            <Image src="/images/footprints.png" alt="" width={14} height={14} />
+            <Image src="/images/footprints.png" alt="" width={14} height={14} style={{ width: "auto", height: "auto" }} />
             <span>{settings.label}</span>
           </div>
         </div>

@@ -43,7 +43,9 @@ export default function ChatMessageList() {
               src={msg.role === "user" ? userIcon : "/images/footprints.png"} 
               alt="icon" 
               fill
-              className="object-contain p-1" // アイコンが端まで行かないように少しパディング
+              className="object-contain p-1"
+              sizes="40px"
+              style={{ width: "auto", height: "auto" }}
             />
           </div>
           {/* 吹き出し */}

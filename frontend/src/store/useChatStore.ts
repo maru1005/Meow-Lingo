@@ -113,8 +113,16 @@ export const useChatStore = create<ChatState>()(
                         updated_at: item.updated_at
                     }));
                     set({ history: mappedHistory });
-                } catch (error) {
+                } catch (error: any) {
+                    // 401/403は認証エラー - ログイン画面へリダイレクト
+                    if (error?.status === 401 || error?.status === 403) {
+                        console.warn("認証エラー：ログインが必要です", error);
+                        set({ history: [] });
+                        return;
+                    }
+                    // その他のエラーはログのみ
                     console.error("History fetch failed", error);
+                    set({ history: [] });
                 }
             },
 

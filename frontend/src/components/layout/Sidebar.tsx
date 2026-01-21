@@ -2,6 +2,7 @@
 "use client";
 
 import { useChatStore } from "@/store/useChatStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect } from "react";
 import { Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -9,10 +10,14 @@ import { useRouter } from "next/navigation";
 export function Sidebar() {
   const router = useRouter();
   const { isSidebarOpen, toggleSidebar, history, fetchHistory, selectConversation, resetChat, deleteConversation } = useChatStore();
+  const { user } = useAuthStore();
   
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    // ログイン状態でのみ履歴を取得
+    if (user) {
+      fetchHistory();
+    }
+  }, [fetchHistory, user]);
 
   return (
     <>
@@ -28,6 +33,16 @@ export function Sidebar() {
           
           <div className="mt-8 flex-1 overflow-y-auto space-y-2">
             <p className="text-xs font-bold text-emerald-300 ml-2">HISTORY</p>
+            
+            {/* ログイン状態でなければ、履歴は表示しない */}
+            {!user && (
+              <p className="text-xs text-emerald-400 ml-2 italic">ログインして履歴を表示</p>
+            )}
+            
+            {/* ログイン済みで履歴が空の場合 */}
+            {user && history.length === 0 && (
+              <p className="text-xs text-emerald-400 ml-2 italic">履歴がないにゃ</p>
+            )}
             
             {history.map((item) => (
               <div key={item.conversation_id} className="group relative">

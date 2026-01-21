@@ -67,13 +67,13 @@ class ChatService:
             chat_crud.create_message(db, conversation.id, ai_reply, "assistant")
 
             if len(conversation.messages) <= 2:
-                asyncio.create_task(
-                    generate_ai_title(
-                        conversation_id=str(conversation.conversation_uuid),
-                        user_message=user_message,
-                        user_id=user.id
+                new_title = await generate_ai_title(
+                    conversation_id=str(conversation.conversation_uuid),
+                    user_message=user_message,
+                    user_id=user.id
                 )
-            )
+                if new_title:
+                    conversation.title = new_title
 
         # 7. レスポンス
         return {
