@@ -68,7 +68,7 @@ export default function ChatPage() {
         
         <div className="shrink-0 px-6 pt-4 pb-2">
           <div className={`inline-flex items-center gap-2 text-[12px] font-bold ${settings.color} tracking-widest transition-colors duration-300`}>
-            <Image src="/images/footprints.png" alt="" width={14} height={14} style={{ width: "auto", height: "auto" }} />
+            <Image src="/images/footprints.png" alt="" width={14} height={14} />
             <span>{settings.label}</span>
           </div>
         </div>

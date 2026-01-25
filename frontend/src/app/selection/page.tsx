@@ -37,6 +37,7 @@ export default function SelectionPage() {
                         fill
                         className="object-contain"
                         priority
+                        sizes="(max-width: 768px) 90vw, 420px"
                     />
                 </div>
 

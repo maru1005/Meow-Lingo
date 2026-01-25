@@ -38,14 +38,13 @@ export default function ChatMessageList() {
         return (
         <div key={i} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} animate-in fade-in slide-in-from-bottom-2`}>
           {/* アイコン */}
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 relative bg-white">
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 relative bg-white p-1">
             <Image 
               src={msg.role === "user" ? userIcon : "/images/footprints.png"} 
               alt="icon" 
-              fill
-              className="object-contain p-1"
-              sizes="40px"
-              style={{ width: "auto", height: "auto" }}
+              width={32}
+              height={32}
+              className="object-contain"
             />
           </div>
           {/* 吹き出し */}

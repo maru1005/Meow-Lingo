@@ -65,7 +65,7 @@ const handleAuthAction = async () => {
                 fill
                 className="object-contain"
                 priority
-                sizes="(ax-width: 768px) 200px, 320px"
+                sizes="(max-width: 768px) 200px, 320px"
               />
             </div>
 
