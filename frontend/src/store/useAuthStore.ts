@@ -3,17 +3,8 @@
 import { create } from "zustand";
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { AuthState } from "@/types/auth";
 
-export type AuthState = {
-    user: User | null;
-    idToken: string | null;      
-    loading: boolean;
-    initialized: boolean;
-    initAuth: () => void;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,

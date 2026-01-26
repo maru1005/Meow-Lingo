@@ -36,7 +36,17 @@ class PromptManager:
                 return content
         except FileNotFoundError:
             logger.warning(f"Prompt file not found: {filename}")
-            return self._default_prompt
+            # フォールバック: system_prompt.txt を優先的に使用
+            fallback = os.path.join(self.prompt_dir, "system_prompt.txt")
+            try:
+                with open(fallback, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    # 参照元のキー（存在しないファイル名）にもキャッシュしておく
+                    self._cache[filename] = content
+                    return content
+            except FileNotFoundError:
+                logger.warning("system_prompt.txt not found. Using default inline prompt.")
+                return self._default_prompt
 
     def get_prompt(self, filename: str) -> str:
         """キャッシュがあれば取得、なければファイルから読み込み"""

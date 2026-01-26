@@ -44,8 +44,8 @@ export function Sidebar() {
               <p className="text-xs text-emerald-400 ml-2 italic">履歴がないにゃ</p>
             )}
             
-            {history.map((item) => (
-              <div key={item.conversation_id} className="group relative">
+            {history.map((item, idx) => (
+              <div key={item.conversation_id || `fallback-${idx}`} className="group relative">
                 <button 
                   onClick={async () => { await selectConversation(item.conversation_id); toggleSidebar();
                     router.push("/chat");

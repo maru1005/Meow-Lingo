@@ -91,7 +91,8 @@ async def chat(
         
         return ChatResponse(
             reply=result["reply"],
-            conversation_id=result["conversation_id"]
+            conversation_id=result["conversation_id"],
+            title=result.get("title")
         )
     except Exception as e:
         logger.error(f"Error in chat: {e}")

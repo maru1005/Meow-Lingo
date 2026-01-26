@@ -26,7 +26,7 @@ services:
     container_name: ${PROJECT_NAME}-backend
     working_dir: /app
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
     env_file:
@@ -46,7 +46,7 @@ services:
     container_name: ${PROJECT_NAME}-frontend
     working_dir: /app
     ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+      - "${FRONTEND_PORT:-3000}:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules

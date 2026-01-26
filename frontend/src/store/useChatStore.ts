@@ -1,24 +1,11 @@
 // frontend/src/store/useChatStore.ts
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware'; // 
+import { persist } from 'zustand/middleware';
 import { apiFetch } from '@/lib/api';
-import { Message, ChatReplyResponse, MessageRole } from '@/types/chat';
+import { Message, ChatReplyResponse, ConversationSummary, ChatState, ChatMode, MessageSummary } from '@/types/chat';
 
-interface ConversationSummary {
-    conversation_id: string;
-    title: string;
-    updated_at: string;
-}
-
-interface ChatState {
-    messages: Message[];
-    history: ConversationSummary[];
-    currentMode: 'study' | 'vocabulary' | 'grammar' | 'test';
-    conversationId: string | null;
-    isLoading: boolean;
-    isSidebarOpen: boolean;
-    
-    setMode: (mode: ChatState['currentMode']) => void;
+export const useChatStore = create<ChatState & {
+    setMode: (mode: ChatMode) => void;
     toggleSidebar: () => void;
     initialGreeting: () => Promise<void>;
     sendMessage: (content: string) => Promise<void>;
@@ -26,9 +13,7 @@ interface ChatState {
     selectConversation: (id: string) => Promise<void>;
     resetChat: () => Promise<void>;
     deleteConversation: (id: string) => Promise<void>;
-}
-
-export const useChatStore = create<ChatState>()(
+}>()(
     persist(
         (set, get) => ({
             messages: [],
@@ -38,7 +23,7 @@ export const useChatStore = create<ChatState>()(
             isLoading: false,
             isSidebarOpen: false,
 
-            setMode: (mode) => set({ currentMode: mode }),
+            setMode: (mode: ChatMode) => set({ currentMode: mode }),
             toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 
             initialGreeting: async () => {
@@ -50,7 +35,7 @@ export const useChatStore = create<ChatState>()(
                         conversation_id: null
                     });
                     set({ 
-                        messages: [{ role: 'assistant', content: data.reply }],
+                        messages: [{ role: 'assistant', content: data.reply, id: `msg-${Date.now()}` }],
                         conversationId: data.conversation_id,
                         isLoading: false 
                     });
@@ -63,8 +48,8 @@ export const useChatStore = create<ChatState>()(
 
             sendMessage: async (content: string) => {
                 const { messages, currentMode, conversationId } = get();
-                const userMsg: Message = { role: 'user', content };
-                set({ messages: [...messages, { role: 'user', content }], isLoading: true });
+                const userMsg: Message = { role: 'user', content, id: `msg-${Date.now()}-user` };
+                set({ messages: [...messages, userMsg], isLoading: true });
 
                 try {
                     const data = await apiFetch<ChatReplyResponse & {title?: string}>("/chat", "POST", {
@@ -74,7 +59,7 @@ export const useChatStore = create<ChatState>()(
                     });
 
                     set((state) => {
-                        const aiMsg: Message = { role: 'assistant', content: data.reply };
+                        const aiMsg: Message = { role: 'assistant', content: data.reply, id: `msg-${Date.now()}-assistant` };
                         const nextMessages = [...state.messages, aiMsg];
                         const updatedHistory = state.history.map(item => {
                             if (item.conversation_id === data.conversation_id && data.title) {
@@ -105,14 +90,8 @@ export const useChatStore = create<ChatState>()(
 
             fetchHistory: async () => {
                 try {
-                    const data = await apiFetch<any[]>("/chat/conversations", "GET");
-                    const mappedHistory = data.map(item => ({
-                        ...item,
-                        conversation_id: item.conversation_id || item.conversation_uuid,
-                        title: item.title,
-                        updated_at: item.updated_at
-                    }));
-                    set({ history: mappedHistory });
+                    const data = await apiFetch<ConversationSummary[]>("/chat/conversations", "GET");
+                    set({ history: data });
                 } catch (error: any) {
                     // 401/403は認証エラー - ログイン画面へリダイレクト
                     if (error?.status === 401 || error?.status === 403) {
@@ -129,10 +108,13 @@ export const useChatStore = create<ChatState>()(
             selectConversation: async (id: string) => {
                 set({ isLoading: true });
                 try {
-                    const data = await apiFetch<any>(`/chat/conversations/${id}`, "GET");
-                    const cleanMessages = (data.messages || []).filter(
-                        (m: any) => m.content !== "INITIAL_GREETING"
-                    );
+                    const data = await apiFetch<ConversationSummary>(`/chat/conversations/${id}`, "GET");
+                    const cleanMessages = (data.messages || [])
+                        .filter((m: MessageSummary) => m.content !== "INITIAL_GREETING")
+                        .map((m: MessageSummary, idx: number) => ({
+                            ...m,
+                            id: `msg-${id}-${idx}`
+                        } as Message));
                     set({ 
                         messages: cleanMessages, 
                         conversationId: id, 

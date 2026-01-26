@@ -22,6 +22,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     conversation_id: Optional[str] = None
+    title: Optional[str] = None
     
     model_config = {"from_attributes": True}
 

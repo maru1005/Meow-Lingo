@@ -2,6 +2,7 @@
 import os
 import json
 import logging
+import re
 from openai import AsyncOpenAI
 from .prompt_manager import prompt_manager
 
@@ -38,13 +39,51 @@ class LLMService:
         content = "Hello! Let's start." if user_input == "INITIAL_GREETING" else user_input
         messages.append({"role": "user", "content": content})
 
+        def _ensure_cat_suffix(text: str) -> str:
+            # コードブロック```...```内は変更しない。通常行の語尾に「にゃ」を補う。
+            lines = text.splitlines()
+            in_code = False
+            processed = []
+            suffix_pattern = re.compile(r"(にゃ|だにゃ)([。．!！?？…」』）\]\)]*)\s*$")
+            for line in lines:
+                s = line.rstrip()
+                # コードブロックの開始/終了判定
+                if s.strip().startswith("```"):
+                    processed.append(line)
+                    in_code = not in_code
+                    continue
+                if in_code:
+                    processed.append(line)
+                    continue
+                # 空行やJSON/配列らしき開始は触らない（安全側）
+                stripped = s.lstrip()
+                if not stripped or stripped[0] in "[{":
+                    processed.append(line)
+                    continue
+                # 既に「にゃ」「だにゃ」で終端していればそのまま
+                if suffix_pattern.search(s):
+                    processed.append(line)
+                    continue
+                # 語尾に句読点がある場合は、その直前に「にゃ」を挿入
+                m = re.search(r"([。．!！?？…」』）\]\)])\s*$", s)
+                if m:
+                    end = m.group(1)
+                    base = s[: s.rfind(end)]
+                    new_line = base + "にゃ" + s[s.rfind(end):]
+                    # 元の右側の空白は保持
+                    processed.append(new_line + line[len(s):])
+                else:
+                    processed.append(s + "にゃ" + line[len(s):])
+            return "\n".join(processed)
+
         try:
             response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content or ""
+            return _ensure_cat_suffix(content)
         except Exception as e:
             logger.error(f"LLM Error: {e}")
             return "エラーだニャ。少し休ませてニャ。"
