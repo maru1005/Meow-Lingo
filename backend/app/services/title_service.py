@@ -1,31 +1,45 @@
 # backend/app/services/title_service.py
 import logging
 from app.core.database import SessionLocal
-from app.services.llm_service import get_ai_response
+from app.services.llm_service import get_internal_json
 from app.crud import chat as chat_crud
 
 logger = logging.getLogger(__name__)
 
+
 async def generate_ai_title(conversation_id: str, user_message: str, user_id: int):
     """
-    バックグラウンドで会話のタイトルを生成してDBを更新するニャ！
+    バックグラウンドで会話のタイトルを生成してDBを更新します。
     """
     if user_message == "INITIAL_GREETING":
         return
 
     try:
-        prompt = f"""
-        Analyze the following user input and provide:
-        1. One representative emoji.
-        2. A title within 10 characters in Japanese.
-        Format: "Emoji Title" (e.g., "🐱 挨拶の練習")
-        Content: {user_message}
-        """
+        system_prompt = (
+            "You are a title generator. Return ONLY valid JSON. "
+            "Rules: title is Japanese and <= 10 characters. emoji is exactly 1 emoji. "
+            "No persona, no suffix, no explanation."
+        )
 
-        ai_title = await get_ai_response(user_input=prompt, chat_mode="system_prompt")
-        ai_title = ai_title.strip().replace('"', '')
+        data = await get_internal_json(
+            system_prompt=system_prompt,
+            user_input=f"Content: {user_message}",
+            temperature=0.2,
+            default={"emoji": "🐱", "title": "会話"},
+        )
+        emoji = data.get("emoji")
+        title = data.get("title")
+        if not isinstance(emoji, str) or not emoji.strip():
+            emoji = "🐱"
+        if not isinstance(title, str) or not title.strip():
+            title = "会話"
+        emoji = emoji.strip().split()[0]
+        title = title.strip().replace('"', "").replace("'", "")
+        if len(title) > 10:
+            title = title[:10]
+        ai_title = f"{emoji} {title}"
 
-        # バックグラウンドタスクなので自分でセッションを管理するニャ
+        # バックグラウンドタスクなので自分でセッションを管理する
         db = SessionLocal()
         try:
             conv = chat_crud.get_conversation(db, conversation_id, user_id)
@@ -35,7 +49,7 @@ async def generate_ai_title(conversation_id: str, user_message: str, user_id: in
                 logger.info(f"Title updated: {ai_title}")
         finally:
             db.close()
-        
+
         return ai_title
 
     except Exception as e:

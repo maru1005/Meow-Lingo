@@ -1,0 +1,35 @@
+# テスト専用 docker-compose
+# 使い方: make test
+
+services:
+  # --- テスト用DB（使い捨て、終了したら消える） ---
+  db-test:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME}-db-test
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: test_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- テスト実行コンテナ ---
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    working_dir: /app              # ./backend/ が /app/ に直接マウントされる
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-test:5432/test_db
+      - ENV=test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    command: pytest

@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from app.crud import chat as chat_crud
 from app.crud import user as user_crud
 from app.crud import dictionary as dict_crud
-from app.services.llm_service import get_ai_response
+from app.services.llm_service import get_ai_response, get_internal_json
 from app.services.dictionary_service import fetch_dictionary_data
-from app.services.title_service import generate_ai_title
+
+# LLMに送る履歴の上限（古いメッセージによるトークン超過・コスト爆発を防ぐ）
+MAX_HISTORY_MESSAGES = 20
+
 
 class ChatService:
     async def chat(self, db: Session, *, firebase_uid: str, user_message: str, 
@@ -41,7 +44,6 @@ class ChatService:
         # 4. 辞書RAG処理
         dictionary_context = None
         if user_message != "INITIAL_GREETING":
-            # 💡 ここで self._extract_keyword を呼ぶので、インデントが大事
             search_word = await self._extract_keyword(user_message)
             if search_word:
                 cache = dict_crud.get_or_create_cache(db, search_word, "en")
@@ -53,8 +55,9 @@ class ChatService:
                         dict_crud.create_cache(db, search_word, "en", dict_res)
                         dictionary_context = dict_res
 
-        # 5. AI応答生成
-        history = conversation.messages if conversation else []
+        # 5. AI応答生成（直近 MAX_HISTORY_MESSAGES 件のみ送信）
+        all_messages = conversation.messages if conversation else []
+        history = all_messages[-MAX_HISTORY_MESSAGES:]
         ai_reply = await get_ai_response(
             user_input=user_message,
             chat_mode=mode,
@@ -65,15 +68,6 @@ class ChatService:
         # 6. AI応答の保存
         if conversation:
             chat_crud.create_message(db, conversation.id, ai_reply, "assistant")
-
-            if len(conversation.messages) <= 2:
-                new_title = await generate_ai_title(
-                    conversation_id=str(conversation.conversation_uuid),
-                    user_message=user_message,
-                    user_id=user.id
-                )
-                if new_title:
-                    conversation.title = new_title
 
         # 7. レスポンス
         return {
@@ -100,11 +94,25 @@ class ChatService:
             conv.title = title
             db.commit()
 
-    # 💡 この関数の左側にスペース（4つ分）がちゃんとあるか確認ニャ！
     async def _extract_keyword(self, text: str) -> str | None:
-        if len(text) < 3 or text == "INITIAL_GREETING": 
+        if text == "INITIAL_GREETING":
             return None
-        prompt = f"Extract one English word from: '{text}'. Return ONLY the word or 'None'."
-        keyword = await get_ai_response(user_input=prompt, chat_mode="system_prompt")
-        res = keyword.strip().lower().replace(".", "")
-        return None if "none" in res else res
+        if len(text.strip()) < 2:
+            return None
+
+        system_prompt = (
+            "You are a strict information extraction engine. Return ONLY valid JSON. "
+            "Extract exactly one English word suitable for dictionary lookup from the input. "
+            "If none, return null. Lowercase the word. No extra keys."
+        )
+        data = await get_internal_json(
+            system_prompt=system_prompt,
+            user_input=f"Input: {text}",
+            temperature=0.0,
+            default={"word": None},
+        )
+        word = data.get("word")
+        if not isinstance(word, str) or not word.strip():
+            return None
+        word = word.strip().split()[0].strip("\"'.,:;!?()[]{}")
+        return word.lower() if word else None

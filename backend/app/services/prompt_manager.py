@@ -1,5 +1,3 @@
-# backend/app/services/prompt_manager.py
-
 import os
 import logging
 
@@ -54,6 +52,29 @@ class PromptManager:
             return self._cache[filename]
         
         return self._load_from_file(filename)
+
+    MODE_TO_FILE = {
+        "study": "system_prompt.txt",
+        "vocabulary": "vocabulary.txt",
+        "grammar": "grammar.txt",
+        "test": "quiz.txt",
+        # backward-compatible alias
+        "system_prompt": "system_prompt.txt",
+        # additional modes
+        "example": "example.txt",
+        "learning_advice": "learning_advice.txt",
+        "fallback": "fallback.txt",
+    }
+
+    def get_prompt_for_mode(self, mode: str) -> str:
+        """chat_modeからプロンプトファイルを安全に解決する"""
+        filename = self.MODE_TO_FILE.get(mode)
+        if filename:
+            return self.get_prompt(filename)
+
+        logger.warning(f"Unknown chat_mode: {mode}. Falling back to fallback.txt")
+        # fallback.txt が無い場合でも get_prompt が system_prompt.txt に落とす
+        return self.get_prompt("fallback.txt")
 
     def clear_cache(self) -> None:
         """キャッシュをクリア"""

@@ -6,7 +6,7 @@ Meow Lingo は、OpenAI API と Firebase を活用した **インタラクティ
 
 ### 📚 4つの学習モード
 
-- **Free** - 自由会話でネイティブのような表現を学習
+- **Free Talk** - 自由会話でネイティブのような表現を学習
 - **Vocabulary** - 単語の意味や使い方を学習
 - **Grammar** - 文法パターンと実践例を習得
 - **Test** - 学習成果を実力テストで確認
@@ -19,20 +19,21 @@ Meow Lingo は、OpenAI API と Firebase を活用した **インタラクティ
 ### 💾 会話履歴管理
 
 - すべての会話をデータベースに保存
-- 過去の会話を履歴から参照可能
-- 会話単位でタイトルを自動生成
+- 過去の会話を履歴から参照・復元可能
+- 会話単位でタイトルを自動生成（バックグラウンド処理）
 
 ### 📖 辞書 RAG 機能
 
 - ユーザーの質問からキーワードを自動抽出
 - 外部辞書 API から定義を取得
-- AIの応答に辞書情報を統合
+- AI の応答に辞書情報を統合してより正確な回答を生成
 
-### 🚀 パフォーマンス最適化
+### 🚀 パフォーマンス・安定性
 
-- プロンプトのメモリキャッシング
+- OpenAI API のタイムアウト・自動リトライ（429/5xx）
+- 会話履歴の上限管理によるトークンコスト制御
 - API クライアントのシングルトン化
-- 最小限のビルドサイズ（.dockerignore 設定）
+- フロントエンドの通信タイムアウト（AbortController）
 
 ---
 
@@ -40,9 +41,9 @@ Meow Lingo は、OpenAI API と Firebase を活用した **インタラクティ
 
 ### 前提条件
 
-- **Docker & Docker Compose** - コンテナ化されたアプリケーション
-- **OpenAI API Key** - ChatGPT API アクセス
-- **Firebase Project** - 認証と設定
+- **Docker & Docker Compose**
+- **OpenAI API Key**
+- **Firebase Project**
 
 ### インストール手順
 
@@ -66,6 +67,9 @@ ENV=development
 BACKEND_PORT=8000
 DATABASE_URL=postgresql://postgres:postgres@db:5432/english_ai
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini          # モデルを変更したい場合はここを変更
+OPENAI_TIMEOUT_SECONDS=30
+OPENAI_MAX_RETRIES=2
 
 # Frontend
 FRONTEND_PORT=3000
@@ -84,10 +88,10 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_PORT=5432
 ```
 
-#### 3️⃣ Docker コンテナの起動
+#### 3️⃣ 起動
 
 ```bash
-docker compose up -d --build
+make up
 ```
 
 #### 4️⃣ アプリケーションにアクセス
@@ -95,6 +99,61 @@ docker compose up -d --build
 - **フロントエンド**: http://localhost:3000
 - **バックエンド API**: http://localhost:8000/api
 - **API ドキュメント**: http://localhost:8000/docs
+
+---
+
+## 🛠️ Makeコマンド一覧
+
+```bash
+# 開発環境
+make up             # コンテナ起動
+make down           # コンテナ停止
+make restart        # コンテナ再起動
+make logs           # 全ログを表示
+make logs-backend   # バックエンドのログのみ
+make logs-frontend  # フロントエンドのログのみ
+
+# DBマイグレーション
+make migrate        # マイグレーション実行
+make migrate-down   # 1つ前に戻す
+
+# テスト
+make test           # テスト実行
+make test-v         # 詳細表示
+make test-k k=chat  # 特定テストのみ（例: "chat" を含むテスト）
+
+# クリーンアップ
+make clean          # コンテナ・ボリュームを全削除
+```
+
+---
+
+## 🧪 テスト
+
+テスト専用の Docker 環境（独立した PostgreSQL）を使用するため、本番データに影響しません。
+
+```bash
+make test
+```
+
+```
+15 passed in 2.26s
+```
+
+### テスト構成
+
+```
+app/tests/
+├── conftest.py               # フィクスチャ（認証モック・テストDB）
+├── api/
+│   ├── test_auth.py          # 認証エンドポイント
+│   ├── test_chat.py          # チャットエンドポイント
+│   ├── test_conversations.py # 会話履歴エンドポイント
+│   ├── test_health.py        # ヘルスチェック
+│   └── test_user.py          # ユーザーエンドポイント
+└── services/
+    └── test_chat_service.py  # ChatService ユニットテスト
+```
 
 ---
 
@@ -106,11 +165,11 @@ docker compose up -d --build
 ├──────────────────────┬──────────────────────────────────────┤
 │   Frontend (Next.js)  │        Backend (FastAPI)             │
 ├──────────────────────┼──────────────────────────────────────┤
-│  • React 18.3.1      │  • Python 3.11                       │
-│  • Next.js 16.1.1    │  • FastAPI                           │
+│  • React 18          │  • Python 3.11                       │
+│  • Next.js 16        │  • FastAPI                           │
 │  • Tailwind CSS      │  • SQLAlchemy ORM                    │
-│  • Zustand           │  • Alembic (DB Migration)           │
-│  • Firebase Auth     │  • OpenAI GPT-4o-mini               │
+│  • Zustand           │  • Alembic (DB Migration)            │
+│  • Firebase Auth     │  • OpenAI GPT-4o-mini                │
 └──────────────────────┴──────────────────────────────────────┘
            │                          │
            ▼                          ▼
@@ -119,7 +178,7 @@ docker compose up -d --build
     ├────────────────────────────────────────┤
     │  • PostgreSQL 15 (Database)            │
     │  • Docker Compose (Orchestration)      │
-    │  • Firebase (Authentication & Config)  │
+    │  • Firebase (Authentication)           │
     │  • OpenAI API (LLM Service)            │
     └────────────────────────────────────────┘
 ```
@@ -139,17 +198,17 @@ docker compose up -d --build
 | **OpenAI**         | LLM API             |
 | **Firebase Admin** | ユーザー認証・検証  |
 | **PostgreSQL**     | データベース        |
+| **pytest**         | テスト              |
 
 ### Frontend
 
 | 技術             | 用途                 |
 | ---------------- | -------------------- |
 | **Next.js 16**   | React フレームワーク |
-| **React 18.3**   | UI ライブラリ        |
 | **TypeScript**   | 型安全性             |
 | **Tailwind CSS** | スタイリング         |
 | **Zustand**      | 状態管理             |
-| **Firebase SDK** | 認証・設定           |
+| **Firebase SDK** | 認証                 |
 
 ---
 
@@ -167,25 +226,28 @@ meow-lingo/
 │   │   ├── crud/                # CRUD 操作
 │   │   ├── services/            # ビジネスロジック
 │   │   ├── dependencies/        # 依存性注入
-│   │   └── tests/               # ユニットテスト
+│   │   └── tests/               # テスト
 │   ├── alembic/                 # DB マイグレーション
 │   ├── scripts/prestart.sh      # 起動スクリプト
 │   ├── Dockerfile
+│   ├── pyproject.toml
 │   └── requirements.txt
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── app/                 # Next.js ページ
 │   │   ├── components/          # React コンポーネント
-│   │   ├── lib/                 # ユーティリティ
-│   │   ├── store/               # 状態管理
+│   │   ├── lib/                 # ユーティリティ・ミドルウェア
+│   │   ├── store/               # 状態管理（Zustand）
 │   │   └── types/               # 型定義
 │   ├── Dockerfile
 │   └── package.json
 │
-├── docker-compose.yml           # コンテナ構成
+├── docker-compose.yml           # 開発環境
+├── docker-compose.test.yml      # テスト環境（独立DB）
+├── Makefile                     # コマンド集
 ├── .env                         # 環境変数
-└── README.md                    # このファイル
+└── README.md
 ```
 
 ---
@@ -201,8 +263,8 @@ GET  /api/auth/me              # 現在のユーザー情報取得
 ### チャット
 
 ```
-POST   /api/chat               # メッセージ送信
-GET    /api/chat/conversations # 会話一覧取得
+POST   /api/chat                    # メッセージ送信
+GET    /api/chat/conversations      # 会話一覧取得
 GET    /api/chat/conversations/:id  # 会話詳細取得
 DELETE /api/chat/conversations/:id  # 会話削除
 ```
@@ -210,13 +272,13 @@ DELETE /api/chat/conversations/:id  # 会話削除
 ### ユーザー
 
 ```
-GET    /api/users/me           # ユーザー情報取得
+GET  /api/user/me              # ユーザー情報取得
 ```
 
 ### ヘルスチェック
 
 ```
-GET    /api/health             # ヘルスチェック
+GET  /api/                     # ヘルスチェック
 ```
 
 詳細は [Swagger UI](http://localhost:8000/docs) を参照。
@@ -226,108 +288,17 @@ GET    /api/health             # ヘルスチェック
 ## 🔐 認証フロー
 
 ```
-1. ユーザーが Firebase でログイン
+1. ユーザーが Firebase でログイン／新規登録
    ↓
-2. Firebase ID Token 取得
+2. useAuthStore 経由で Firebase ID Token を取得・ストアに保存
    ↓
-3. フロントエンドが Authorization ヘッダーに ID Token を含める
+3. フロントエンドが Authorization ヘッダーに ID Token を付与
    ↓
-4. バックエンドが ID Token を検証
+4. バックエンドが Firebase Admin SDK で ID Token を検証
    ↓
-5. firebase_uid から user 取得 or 作成
+5. firebase_uid からユーザーを取得 or 自動作成
    ↓
 6. API レスポンス
-```
-
-### 新規登録フロー
-
-ホームページから新規登録へアクセス可能：
-
-```
-1. ホームページ（未ログイン状態）を表示
-   ↓
-2. 「新規登録はこちら」リンククリック → /signup ページへ
-   ↓
-3. ユーザーが以下を入力
-   - メールアドレス（@ を含む有効なメール）
-   - パスワード（6文字以上）
-   - パスワード確認（一致する必要がある）
-   ↓
-4. リアルタイムバリデーション
-   - メール形式チェック
-   - パスワード長チェック
-   - パスワード一致確認
-   ↓
-5. 「登録する」ボタンクリック
-   ↓
-6. Firebase で createUserWithEmailAndPassword 実行
-   ↓
-7. 成功時：
-   - /selection ページへリダイレクト
-   - バックエンドが firebase_uid から user を自動作成
-   ↓
-8. エラー時：
-   - Firebase のエラーコードを日本語で表示
-   - ユーザーが修正可能
-```
-
-**対応するエラーメッセージ：**
-
-- `email-already-in-use`: 既に登録されているメールアドレス
-- `weak-password`: パスワードが弱い（6文字以上推奨）
-- `invalid-email`: 有効なメールアドレスではない
-- `operation-not-allowed`: この操作は許可されていない
-
----
-
-## 🔐 認証後の履歴表示
-
-ログイン状態でのみ会話履歴が Sidebar に表示されます：
-
-```
-ログイン済み状態：
-  ✓ HISTORY セクションに会話一覧を表示
-  ✓ 過去の会話をクリックで復元
-  ✓ 削除ボタンで会話を削除
-
-未ログイン状態：
-  → 「ログインして履歴を表示」メッセージを表示
-```
-
----
-
-## 🚀 開発ガイド
-
-### バックエンド開発（ホストで）
-
-```bash
-# 1. 仮想環境作成
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-
-# 2. 依存パッケージインストール
-pip install -r requirements.txt
-
-# 3. サーバー起動
-uvicorn app.main:app --reload
-
-# 4. テスト実行
-pytest
-```
-
-### フロントエンド開発（ホストで）
-
-```bash
-# 1. 依存パッケージインストール
-cd frontend
-npm install
-
-# 2. 開発サーバー起動
-npm run dev
-
-# 3. ESLint チェック
-npm run lint
 ```
 
 ---
@@ -350,7 +321,7 @@ CREATE TABLE users (
 ```sql
 CREATE TABLE conversations (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   conversation_uuid UUID UNIQUE,
   title VARCHAR,
   chat_mode VARCHAR,
@@ -364,8 +335,8 @@ CREATE TABLE conversations (
 ```sql
 CREATE TABLE messages (
   id SERIAL PRIMARY KEY,
-  conversation_id INTEGER REFERENCES conversations(id),
-  role VARCHAR (user | assistant),
+  conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+  role VARCHAR,   -- "user" | "assistant"
   content TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -378,31 +349,27 @@ CREATE TABLE messages (
 ### コンテナが起動しない
 
 ```bash
-# Docker クリーンアップ
-docker system prune -a --volumes
-
-# 再ビルド
-docker compose down -v
-docker compose up -d --build
+make clean
+make up
 ```
 
 ### DB マイグレーション失敗
 
 ```bash
-# マイグレーション履歴確認
+# マイグレーション状態確認
 docker compose exec backend alembic current
 docker compose exec backend alembic history
+
+# マイグレーション再実行
+make migrate
 ```
 
----
+### テストが通らない
 
-## 📈 パフォーマンス最適化
-
-### ✅ 実装済み
-
-- **プロンプトキャッシング** - ファイルI/O → メモリアクセス
-- **API クライアント シングルトン化** - 不要な再生成を排除
-- **最小ビルドサイズ** - `.dockerignore` で13GB 削減
+```bash
+# テストログを詳細表示
+make test-v
+```
 
 ---
 

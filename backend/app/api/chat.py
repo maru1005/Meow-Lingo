@@ -38,9 +38,11 @@ def list_conversations(db: Session = Depends(get_db), user=Depends(get_current_u
                 )
             )
         return res
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in list_conversations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in list_conversations: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.get("/conversations/{conversation_id}", response_model=ConversationSummary)
 def get_conversation(conversation_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -59,9 +61,11 @@ def get_conversation(conversation_id: str, db: Session = Depends(get_db), user=D
                 for m in conv.messages
             ]
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in get_conversation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in get_conversation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.post("", response_model=ChatResponse)
 async def chat(
@@ -71,6 +75,7 @@ async def chat(
     user=Depends(get_current_user)
 ):
     try:
+        is_new_conversation = not request.conversation_id
         # チャット実行
         result = await chat_service.chat(
             db=db,
@@ -81,12 +86,12 @@ async def chat(
         )
 
         # タイトル生成（新規会話のみ）
-        if not request.conversation_id:
+        if is_new_conversation and request.message != "INITIAL_GREETING":
             background_tasks.add_task(
                 generate_ai_title,
                 conversation_id=result["conversation_id"],
                 user_message=request.message,
-                user_id=user.id
+                user_id=user.id,
             )
         
         return ChatResponse(
@@ -94,9 +99,11 @@ async def chat(
             conversation_id=result["conversation_id"],
             title=result.get("title")
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in chat: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in chat: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.delete("/conversations/{conversation_id}")
 async def delete_conversation(conversation_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -104,6 +111,8 @@ async def delete_conversation(conversation_id: str, db: Session = Depends(get_db
         if not chat_service.delete_conversation(db, conversation_id, user.firebase_uid):
             raise HTTPException(status_code=404, detail="Not found")
         return {"status": "ok"}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in delete_conversation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in delete_conversation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

@@ -1,25 +1,42 @@
 // src/components/features/chat/ChatInput.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { SendHorizontal, Loader2 } from "lucide-react";
-import { useChatStore } from "@/store/useChatStore";
+import { useEffect, useState } from 'react';
+import { SendHorizontal, Loader2, AlertCircle, X } from 'lucide-react';
+import { useChatStore } from '@/store/useChatStore';
 
 export default function ChatInput() {
-  const [text, setText] = useState("");
-  const { sendMessage, isLoading } = useChatStore();
+  const [text, setText] = useState('');
+  const { sendMessage, isLoading, errorMessage, clearError } = useChatStore();
+
+  // エラーは5秒後に自動消去
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = setTimeout(() => clearError(), 5000);
+    return () => clearTimeout(timer);
+  }, [errorMessage, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || isLoading) return;
-
     const currentText = text;
-    setText("");
+    setText('');
     await sendMessage(currentText);
   };
 
   return (
     <div className="pt-2 pb-4 px-2">
+      {/* エラートースト */}
+      {errorMessage && (
+        <div className="mb-2 mx-1 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-600">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span className="flex-1">{errorMessage}</span>
+          <button onClick={clearError} className="shrink-0 hover:text-red-800">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="
@@ -36,7 +53,7 @@ export default function ChatInput() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           disabled={isLoading}
-          placeholder={isLoading ? "Meowが考え中にゃ…" : "メッセージを入力"}
+          placeholder={isLoading ? 'Meowが考え中にゃ…' : 'メッセージを入力'}
           className="
             flex-1 bg-transparent px-4 py-2 text-sm
             text-emerald-900 placeholder:text-emerald-400
