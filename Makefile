@@ -34,13 +34,15 @@ migrate-down:
 
 test:
 	docker compose -f docker-compose.test.yml run --rm backend-test pytest -q
+	docker compose -f docker-compose.test.yml down
 
 test-v:
 	docker compose -f docker-compose.test.yml run --rm backend-test pytest -v
+	docker compose -f docker-compose.test.yml down
 
 test-k:
 	docker compose -f docker-compose.test.yml run --rm backend-test pytest -v -k "$(k)"
-
+	docker compose -f docker-compose.test.yml down
 # --- クリーンアップ ---
 
 clean:
